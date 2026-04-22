@@ -1535,23 +1535,82 @@ function csvSplitLine(line, delimiter = ';') {
 }
 
 function parseCsvText(content) {
-    const lines = String(content || '')
-        .replace(/\r\n/g, '\n')
-        .replace(/\r/g, '\n')
-        .split('\n')
-        .map(line => line.trim())
-        .filter(Boolean);
-    if (!lines.length) {
+    const text = String(content || '').replace(/^\uFEFF/, '');
+    if (!text.trim()) {
         return [];
     }
-    const headers = csvSplitLine(lines[0]).map(header => String(header || '').trim());
-    return lines.slice(1).map((line) => {
-        const values = csvSplitLine(line);
+
+    const rows = [];
+    let currentRow = [];
+    let currentCell = '';
+    let inQuotes = false;
+
+    const commitCell = () => {
+        currentRow.push(currentCell);
+        currentCell = '';
+    };
+    const commitRow = () => {
+        if (currentRow.length === 1 && currentRow[0] === '') {
+            currentRow = [];
+            return;
+        }
+        rows.push(currentRow);
+        currentRow = [];
+    };
+
+    for (let index = 0; index < text.length; index += 1) {
+        const char = text[index];
+        if (inQuotes) {
+            if (char === '"') {
+                if (text[index + 1] === '"') {
+                    currentCell += '"';
+                    index += 1;
+                } else {
+                    inQuotes = false;
+                }
+            } else {
+                currentCell += char;
+            }
+            continue;
+        }
+
+        if (char === '"') {
+            inQuotes = true;
+            continue;
+        }
+        if (char === ';') {
+            commitCell();
+            continue;
+        }
+        if (char === '\n' || char === '\r') {
+            commitCell();
+            commitRow();
+            if (char === '\r' && text[index + 1] === '\n') {
+                index += 1;
+            }
+            continue;
+        }
+        currentCell += char;
+    }
+
+    if (inQuotes) {
+        throw new Error('CSV invalide : guillemets non fermés');
+    }
+
+    commitCell();
+    commitRow();
+
+    if (!rows.length) {
+        return [];
+    }
+
+    const headers = rows[0].map(header => String(header || '').trim());
+    return rows.slice(1).map((values) => {
         return headers.reduce((row, header, index) => {
             row[header] = (values[index] ?? '').trim();
             return row;
         }, {});
-    });
+    }).filter((row) => Object.values(row).some((value) => value !== ''));
 }
 
 function readCsvFile(callback) {
