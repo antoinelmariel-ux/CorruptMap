@@ -7470,7 +7470,6 @@ class RiskManagementSystem {
             }
         };
 
-        const viewSymbols = { brut: 'B', net: 'N' };
         const mitigationOrder = Array.isArray(MITIGATION_EFFECTIVENESS_ORDER)
             ? [...MITIGATION_EFFECTIVENESS_ORDER]
             : ['inefficace', 'insuffisant', 'ameliorable', 'efficace'];
@@ -7481,6 +7480,54 @@ class RiskManagementSystem {
             modere: 'Modéré',
             faible: 'Faible'
         };
+        const rankingByView = {
+            brut: new Map(),
+            net: new Map()
+        };
+
+        const rankingDefinitions = {
+            brut: (risk) => {
+                if (typeof getRiskBrutScore === 'function') {
+                    return Number(getRiskBrutScore(risk));
+                }
+                const prob = Number(risk?.probBrut);
+                const impact = Number(risk?.impactBrut);
+                if (!Number.isFinite(prob) || !Number.isFinite(impact)) {
+                    return Number.NaN;
+                }
+                let coefficient = 1;
+                if (typeof getRiskAggravatingCoefficient === 'function') {
+                    coefficient = Number(getRiskAggravatingCoefficient(risk)) || 1;
+                }
+                return prob * impact * coefficient;
+            },
+            net: (risk) => {
+                if (typeof getRiskNetScore === 'function') {
+                    return Number(getRiskNetScore(risk));
+                }
+                if (typeof getRiskNetInfo === 'function') {
+                    return Number(getRiskNetInfo(risk)?.score);
+                }
+                return Number.NaN;
+            }
+        };
+
+        Object.entries(rankingDefinitions).forEach(([viewKey, getScore]) => {
+            const rankedRisks = filteredRisks
+                .map(risk => ({
+                    id: risk.id,
+                    score: Number(getScore(risk))
+                }))
+                .filter(entry => Number.isFinite(entry.score))
+                .sort((a, b) => {
+                    if (b.score !== a.score) return b.score - a.score;
+                    return String(a.id).localeCompare(String(b.id), 'fr', { numeric: true, sensitivity: 'base' });
+                });
+
+            rankedRisks.forEach((entry, index) => {
+                rankingByView[viewKey].set(entry.id, index + 1);
+            });
+        });
 
         Object.entries(viewConfigs).forEach(([viewKey, config]) => {
             const grid = document.getElementById(config.gridId);
@@ -7560,7 +7607,7 @@ class RiskManagementSystem {
                     tooltipSegments.push(`Gross level: ${severityLabelMap[brutLevel] || brutLevel}`);
 
                     point.title = tooltipSegments.join(' • ');
-                    point.textContent = viewSymbols[viewKey] || '';
+                    point.textContent = String(rankingByView[viewKey].get(risk.id) || '');
                     point.setAttribute('aria-label', `${config.label} : ${risk.description}`);
                     point.onclick = () => this.selectRisk(risk.id);
                     grid.appendChild(point);
@@ -7638,7 +7685,7 @@ class RiskManagementSystem {
                 }
 
                 point.title = tooltipSegments.join(' • ');
-                point.textContent = viewSymbols[viewKey] || '';
+                point.textContent = String(rankingByView[viewKey].get(risk.id) || '');
                 point.setAttribute('aria-label', `${config.label} : ${risk.description}`);
                 point.onclick = () => this.selectRisk(risk.id);
                 if (viewKey === 'brut' && window.matrixEditMode) {
