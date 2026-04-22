@@ -1,0 +1,20 @@
+{
+  "id": 3,
+  "fileIndex": 3,
+  "fileName": "interview3.json",
+  "title": "Entretien Anke BALCAEN",
+  "referents": [
+    "Anke BALCAEN"
+  ],
+  "date": "2026-01-09",
+  "notes": "",
+  "scopes": [],
+  "processes": [],
+  "subProcesses": [],
+  "createdAt": "2026-01-09T16:20:44Z",
+  "updatedAt": "2026-01-09T16:20:44Z",
+  "mindMap": {
+    "version": 1,
+    "data": null
+  }
+}

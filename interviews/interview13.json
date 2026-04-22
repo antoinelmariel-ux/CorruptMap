@@ -1,0 +1,20 @@
+{
+  "id": 13,
+  "fileIndex": 13,
+  "fileName": "interview13.json",
+  "title": "Entretien Cédric DEPRE",
+  "referents": [
+    "Cédric DEPRE"
+  ],
+  "date": "2026-01-09",
+  "notes": "",
+  "scopes": [],
+  "processes": [],
+  "subProcesses": [],
+  "createdAt": "2026-01-09T16:20:44Z",
+  "updatedAt": "2026-01-09T16:20:44Z",
+  "mindMap": {
+    "version": 1,
+    "data": null
+  }
+}

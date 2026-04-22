@@ -1,0 +1,20 @@
+{
+  "id": 4,
+  "fileIndex": 4,
+  "fileName": "interview4.json",
+  "title": "Entretien Anne Laurence SABATINI",
+  "referents": [
+    "Anne Laurence SABATINI"
+  ],
+  "date": "2026-01-09",
+  "notes": "",
+  "scopes": [],
+  "processes": [],
+  "subProcesses": [],
+  "createdAt": "2026-01-09T16:20:44Z",
+  "updatedAt": "2026-01-09T16:20:44Z",
+  "mindMap": {
+    "version": 1,
+    "data": null
+  }
+}

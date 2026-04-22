@@ -1,0 +1,20 @@
+{
+  "id": 50,
+  "fileIndex": 50,
+  "fileName": "interview50.json",
+  "title": "Entretien MSL",
+  "referents": [
+    "MSL"
+  ],
+  "date": "2026-01-09",
+  "notes": "",
+  "scopes": [],
+  "processes": [],
+  "subProcesses": [],
+  "createdAt": "2026-01-09T16:20:44Z",
+  "updatedAt": "2026-01-09T16:20:44Z",
+  "mindMap": {
+    "version": 1,
+    "data": null
+  }
+}
