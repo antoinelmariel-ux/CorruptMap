@@ -7947,6 +7947,25 @@ class RiskManagementSystem {
                 return typeMap[rawValue] || typeMap[rawValue.toLowerCase()] || rawValue;
             };
 
+            const tierMap = (Array.isArray(this.config?.tiers) ? this.config.tiers : []).reduce((acc, item) => {
+                if (!item || item.value === undefined || item.value === null) {
+                    return acc;
+                }
+                const rawValue = String(item.value);
+                const label = item.label || rawValue;
+                acc[rawValue] = label;
+                acc[rawValue.toLowerCase()] = label;
+                return acc;
+            }, {});
+
+            const resolveTierLabel = (value) => {
+                if (value == null) {
+                    return '';
+                }
+                const rawValue = String(value);
+                return tierMap[rawValue] || tierMap[rawValue.toLowerCase()] || rawValue;
+            };
+
             container.innerHTML = scoredRisks.map(entry => {
                 const { risk, score } = entry;
                 let scoreClass = 'low';
@@ -7957,15 +7976,22 @@ class RiskManagementSystem {
                 const processLabel = risk?.processus && String(risk.processus).trim()
                     ? this.getProcessLabel(String(risk.processus).trim())
                     : 'Not defined';
-                const sp = risk?.sousProcessus && String(risk.sousProcessus).trim()
-                    ? ` > ${this.getSubProcessLabel(risk?.processus, String(risk.sousProcessus).trim())}`
+                const selectedSubProcessLabel = risk?.sousProcessus && String(risk.sousProcessus).trim()
+                    ? this.getSubProcessLabel(risk?.processus, String(risk.sousProcessus).trim())
                     : '';
+                const processOrSubProcess = selectedSubProcessLabel || processLabel;
                 const typeLabel = resolveTypeLabel(risk?.typeCorruption);
+                const tiersLabel = Array.isArray(risk?.tiers)
+                    ? risk.tiers
+                        .map(tier => resolveTierLabel(tier))
+                        .filter(Boolean)
+                        .join(', ')
+                    : '';
                 const formattedScore = Number.isFinite(score)
                     ? score.toLocaleString('fr-FR', { maximumFractionDigits: 2 })
                     : '0';
 
-                const metaDetails = `Processus: ${processLabel}${sp} • Type: ${typeLabel}`;
+                const metaDetails = `Processus: ${processOrSubProcess} • Tiers: ${tiersLabel || 'Not defined'} • Type: ${typeLabel}`;
 
                 return `
                     <div class="risk-item" data-risk-id="${risk.id}" onclick="rms.selectRisk(${JSON.stringify(risk.id)})">
