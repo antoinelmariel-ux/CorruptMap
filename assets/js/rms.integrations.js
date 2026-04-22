@@ -1959,6 +1959,117 @@ function exportReportsRisksXlsx() {
 }
 window.exportReportsRisksXlsx = exportReportsRisksXlsx;
 
+function parseSpreadsheetList(value) {
+    if (!value && value !== 0) return [];
+    return String(value)
+        .split(/[|,;]+/)
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+}
+
+function findOptionValueFromLabel(value, options = []) {
+    const raw = String(value ?? '').trim();
+    if (!raw) return '';
+    const normalized = raw.toLowerCase();
+    const found = Array.isArray(options)
+        ? options.find((entry) => String(entry?.label ?? '').trim().toLowerCase() === normalized
+            || String(entry?.value ?? '').trim().toLowerCase() === normalized)
+        : null;
+    return found?.value ?? raw;
+}
+
+function importRisksAssessmentXlsx() {
+    if (!window.rms) return;
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    input.style.display = 'none';
+
+    input.addEventListener('change', async (event) => {
+        const file = event.target.files && event.target.files[0];
+        if (!file) {
+            input.remove();
+            return;
+        }
+
+        try {
+            const xlsx = await ensureXlsxLibrary();
+            const buffer = await file.arrayBuffer();
+            const workbook = xlsx.read(buffer, { type: 'array', cellDates: true });
+            const firstSheetName = workbook.SheetNames?.[0];
+            if (!firstSheetName) {
+                throw new Error('Aucune feuille trouvée dans le classeur');
+            }
+
+            const worksheet = workbook.Sheets[firstSheetName];
+            const rows = xlsx.utils.sheet_to_json(worksheet, { defval: '' });
+            if (!rows.length) {
+                throw new Error('Aucune ligne exploitable');
+            }
+
+            const importedRisks = rows.map((row, index) => {
+                const id = String(row['ID du risque'] || '').trim() || `risk-${Date.now()}-${index + 1}`;
+                const probBrut = toIntScore(row['Probabilité brut'], 2);
+                const impactBrut = toIntScore(row['Impact brut'], 2);
+
+                const risk = {
+                    id,
+                    titre: row['Scénario'] || '',
+                    description: row['Scénario'] || 'Sans description',
+                    processus: 'Non renseigné',
+                    sousProcessus: '',
+                    typeCorruption: findOptionValueFromLabel(row['Type de corruption'], rms?.config?.riskTypes),
+                    statut: findOptionValueFromLabel(row['Statut du risque'], rms?.config?.riskStatuses) || 'brouillon',
+                    probBrut,
+                    impactBrut,
+                    probNet: probBrut,
+                    impactNet: impactBrut,
+                    mitigationEffectiveness: findOptionValueFromLabel(
+                        row['Niveau de maîtrise'],
+                        typeof getMitigationEffectivenessOptions === 'function' ? getMitigationEffectivenessOptions() : []
+                    ),
+                    controls: [],
+                    actionPlans: [],
+                    tiers: parseSpreadsheetList(row.Tiers).map((item) => findOptionValueFromLabel(item, rms?.config?.tiers)),
+                    paysExposes: parseSpreadsheetList(row['Entités concernées']).map((item) => findOptionValueFromLabel(item, rms?.config?.countries)),
+                    dateCreation: new Date().toISOString()
+                };
+
+                if (typeof rms.normalizeRisk === 'function') {
+                    return rms.normalizeRisk(risk);
+                }
+                return risk;
+            });
+
+            const existing = new Map((rms.risks || []).map((risk) => [String(risk.id), risk]));
+            importedRisks.forEach((risk) => existing.set(String(risk.id), { ...existing.get(String(risk.id)), ...risk }));
+            rms.risks = Array.from(existing.values());
+
+            if (typeof rms.saveData === 'function') {
+                rms.saveData();
+            }
+            if (typeof rms.renderAll === 'function') {
+                rms.renderAll();
+            }
+            if (typeof showNotification === 'function') {
+                showNotification('success', `${importedRisks.length} risque(s) importé(s) depuis ${file.name}.`);
+            }
+        } catch (error) {
+            console.error('Import risques XLSX impossible', error);
+            if (typeof showNotification === 'function') {
+                showNotification('error', `Import risques XLSX impossible : ${error.message}`);
+            }
+        } finally {
+            input.remove();
+        }
+    });
+
+    document.body.appendChild(input);
+    input.click();
+}
+window.importRisksAssessmentXlsx = importRisksAssessmentXlsx;
+
 function importRisksAssessmentCsv() {
     if (!window.rms) return;
     readCsvFile((content, filename) => {
