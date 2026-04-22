@@ -5,15 +5,15 @@
         'High corruption-risk countries (CPI < 40)',
         'Moderate corruption-risk countries (40 ≤ CPI < 60)',
         'Intermediaries difficult to control',
-        'Unstable geographic areas',
+        'Geographically unstable areas',
         'Exposed sectors (construction, energy, defense)',
-        'Gift-tolerant culture',
+        'Culture of gift-giving',
         'High turnover'
     ];
     const EFFECTIVENESS_LEVELS = [
         { value: 0, label: 'Ineffective' },
         { value: 25, label: 'Insufficient' },
-        { value: 50, label: 'Needs improvement' },
+        { value: 50, label: 'Room for improvement' },
         { value: 75, label: 'Effective' }
     ];
     const PROBABILITY_DETAILS = {
@@ -76,7 +76,7 @@
     const state = {
         view: 'scenarios',
         data: {
-            version: '2.14.60',
+            version: '2.14.77',
             scenarios: [],
             selectedId: null
         }
