@@ -1107,6 +1107,7 @@ class RiskManagementSystem {
         normalized.processus = normalized.processusAssocies[0] || '';
         normalized.sousProcessus = normalized.sousProcessusAssocies[0] || '';
         normalized.typeCorruption = normalized.typesCorruption[0] || '';
+        normalized.example = typeof risk?.example === 'string' ? risk.example.trim() : '';
         normalized.avantagesIndus = normalizeMultiValues(risk?.avantagesIndus);
         normalized.avantagesAttendus = normalizeMultiValues(risk?.avantagesAttendus);
 
@@ -7592,9 +7593,12 @@ class RiskManagementSystem {
                     point.className = `risk-point ${viewKey}`;
                     point.dataset.riskId = risk.id;
 
+                    const displayText = (typeof risk.example === 'string' && risk.example.trim())
+                        ? risk.example.trim()
+                        : (risk.description || '');
                     const tooltipSegments = [];
-                    if (risk.description) {
-                        tooltipSegments.push(risk.description);
+                    if (displayText) {
+                        tooltipSegments.push(displayText);
                     }
                     const formattedBrut = Number.isFinite(netInfo.brutScore)
                         ? netInfo.brutScore.toLocaleString('fr-FR', { maximumFractionDigits: 2 })
@@ -7608,7 +7612,7 @@ class RiskManagementSystem {
 
                     point.title = tooltipSegments.join(' • ');
                     point.textContent = String(rankingByView[viewKey].get(risk.id) || '');
-                    point.setAttribute('aria-label', `${config.label} : ${risk.description}`);
+                    point.setAttribute('aria-label', `${config.label} : ${displayText}`);
                     point.onclick = () => this.selectRisk(risk.id);
                     grid.appendChild(point);
 
@@ -7673,9 +7677,12 @@ class RiskManagementSystem {
                     }
                 }
                 point.dataset.riskId = risk.id;
+                const displayText = (typeof risk.example === 'string' && risk.example.trim())
+                    ? risk.example.trim()
+                    : (risk.description || '');
                 const tooltipSegments = [];
-                if (risk.description) {
-                    tooltipSegments.push(risk.description);
+                if (displayText) {
+                    tooltipSegments.push(displayText);
                 }
                 if (coefficient > 1) {
                     const formattedCoef = typeof formatCoefficient === 'function'
@@ -7686,7 +7693,7 @@ class RiskManagementSystem {
 
                 point.title = tooltipSegments.join(' • ');
                 point.textContent = String(rankingByView[viewKey].get(risk.id) || '');
-                point.setAttribute('aria-label', `${config.label} : ${risk.description}`);
+                point.setAttribute('aria-label', `${config.label} : ${displayText}`);
                 point.onclick = () => this.selectRisk(risk.id);
                 if (viewKey === 'brut' && window.matrixEditMode) {
                     point.draggable = true;
@@ -11649,6 +11656,7 @@ class RiskManagementSystem {
             }
 
             document.getElementById('description').value = risk.description || '';
+            document.getElementById('example').value = risk.example || '';
             document.getElementById('probBrut').value = risk.probBrut;
             document.getElementById('impactBrut').value = risk.impactBrut;
             const probNetInput = document.getElementById('probNet');
