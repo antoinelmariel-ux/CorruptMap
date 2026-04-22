@@ -886,7 +886,7 @@ window.deselectAllRiskCountries = deselectAllRiskCountries;
 
 const RISK_MULTI_SELECT_CHIP_CONFIG = {
     processus: { containerId: 'processusChips', defaultColor: '#2563eb' },
-    sousProcessus: { containerId: 'sousProcessusChips', defaultColor: '#2563eb' },
+    sousProcessus: { containerId: 'sousProcessChips', defaultColor: '#2563eb' },
     typeCorruption: { containerId: 'typeCorruptionChips', defaultColor: '#db2777' },
     tiers: { containerId: 'tiersChips', defaultColor: '#16a34a' }
 };
