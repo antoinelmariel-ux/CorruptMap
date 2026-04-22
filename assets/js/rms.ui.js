@@ -555,7 +555,7 @@ function renderBenefitFirstAssignment() {
             ${undueBenefits.map(label => {
                 const linkedControls = getAssignedControlsForBenefit(label);
                 const summary = linkedControls.length
-                    ? linkedControls.slice(0, 2).map(item => item.name).join(' • ') + (linkedControls.length > 2 ? ` • +${linkedControls.length - 2}` : '')
+                    ? `${linkedControls.length} linked control${linkedControls.length > 1 ? 's' : ''}`
                     : 'No linked control';
                 const linkedHtml = linkedControls.length
                     ? `<div class="benefit-first-linked-controls">
