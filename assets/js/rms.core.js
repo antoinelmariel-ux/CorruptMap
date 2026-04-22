@@ -672,12 +672,13 @@ class RiskManagementSystem {
             'Mexico',
             'EuroPlasma',
             'LFB USA',
+            'American Plasma',
             'HemaBiologics',
             'Distributors'
         ];
 
         const targetColumns = [
-            { key: 'hq', label: 'Transversal entities', countries: ['HQ', 'LFB USA', 'EuroPlasma'] },
+            { key: 'hq', label: 'Transversal entities', countries: ['HQ', 'LFB USA', 'American Plasma', 'EuroPlasma'] },
             {
                 key: 'pharma-affiliates-jv-plus-50',
                 label: 'Pharma Affiliates / JV > 50%',
