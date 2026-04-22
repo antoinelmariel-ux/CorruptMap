@@ -1077,6 +1077,7 @@ function addNewRisk() {
             setRiskCountriesSelection(lastRiskData.paysExposes || []);
 
             document.getElementById('description').value = lastRiskData.description || '';
+            document.getElementById('example').value = lastRiskData.example || '';
             document.getElementById('probBrut').value = lastRiskData.probBrut || 1;
             document.getElementById('impactBrut').value = lastRiskData.impactBrut || 1;
             const mitigationInput = document.getElementById('mitigationEffectiveness');
@@ -1209,6 +1210,7 @@ function saveRisk() {
         sousProcessus: sousProcessusAssocies[0] || '',
         sousProcessusAssocies,
         description: document.getElementById('description').value,
+        example: document.getElementById('example').value,
         typeCorruption: typesCorruption[0] || '',
         typesCorruption,
         statut: document.getElementById('statut').value,
