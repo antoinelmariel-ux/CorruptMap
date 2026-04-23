@@ -7448,10 +7448,10 @@ class RiskManagementSystem {
             const mitigationOptions = typeof getMitigationEffectivenessOptions === 'function'
                 ? getMitigationEffectivenessOptions()
                 : [
-                    { value: 'efficace', label: 'Effective', coefficient: 0.75 },
-                    { value: 'ameliorable', label: 'Room for improvement', coefficient: 0.5 },
+                    { value: 'inefficace', label: 'Ineffective', coefficient: 0 },
                     { value: 'insuffisant', label: 'Insufficient', coefficient: 0.25 },
-                    { value: 'inefficace', label: 'Ineffective', coefficient: 0 }
+                    { value: 'ameliorable', label: 'Room for improvement', coefficient: 0.5 },
+                    { value: 'efficace', label: 'Effective', coefficient: 0.75 }
                 ];
 
             const brutLevels = [
@@ -7482,8 +7482,8 @@ class RiskManagementSystem {
                     cell.dataset.brutLevel = level.value;
                     cell.dataset.effectiveness = option.value;
                     const coefficient = Number(option.coefficient) || 0;
-                    const mitigationMastery = Math.min(Math.max(coefficient, 0), 1);
-                    const referenceScore = level.reference * mitigationMastery;
+                    const mitigationReduction = Math.min(Math.max(coefficient, 0), 1);
+                    const referenceScore = level.reference * (1 - mitigationReduction);
                     cell.classList.add(getSeverityClass(referenceScore));
                     netGrid.appendChild(cell);
                 });
@@ -7630,7 +7630,7 @@ class RiskManagementSystem {
                         ? netInfo.score.toLocaleString('fr-FR', { maximumFractionDigits: 2 })
                         : '0';
                     tooltipLines.push(`Gross ${formattedBrut} → Net ${formattedNet}`);
-                    tooltipLines.push(`Mastery level ${formatMitigationCoefficient(netInfo.coefficient)} (${netInfo.label})`);
+                    tooltipLines.push(`Reduction ${formatMitigationCoefficient(netInfo.coefficient)} (${netInfo.label})`);
                     tooltipLines.push(`Gross level: ${severityLabelMap[brutLevel] || brutLevel}`);
 
                     point.title = tooltipLines.join('\n');
@@ -9160,7 +9160,7 @@ class RiskManagementSystem {
                         ? entry.brutScore.toLocaleString('en-GB')
                         : '0';
                     const reductionLabel = `${entry.reduction ?? 0}%${entry.label ? ` (${entry.label})` : ''}`;
-                    const meta = `Gross ${brutLabel} → Net ${scoreLabel} • Mastery ${reductionLabel}`;
+                    const meta = `Gross ${brutLabel} → Net ${scoreLabel} • Reduction ${reductionLabel}`;
 
                     return `
                         <tr>
@@ -9579,7 +9579,7 @@ class RiskManagementSystem {
                     <td>${tierLabels.join(', ')}</td>
                     <td>${grossLabel}</td>
                     <td>${aggravatedLabel}</td>
-                    <td title="Mastery ${reductionLabel}${effectivenessLabel}">${netLabel}</td>
+                    <td title="Reduction ${reductionLabel}${effectivenessLabel}">${netLabel}</td>
                     <td title="${actionPlansLabel}">${actionPlansLabel}</td>
                     <td><span class="table-badge badge-${riskBadgeClass}">${riskStatusLabel || 'Not defined'}</span></td>
                     <td class="table-actions-cell">

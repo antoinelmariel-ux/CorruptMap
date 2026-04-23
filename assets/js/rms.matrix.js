@@ -40,10 +40,10 @@ function ensureNetMitigationOptions() {
     netMitigationOptions = typeof getMitigationEffectivenessOptions === 'function'
         ? getMitigationEffectivenessOptions()
         : [
-            { value: 'efficace', label: 'Effective', coefficient: 0.75 },
-            { value: 'ameliorable', label: 'Room for improvement', coefficient: 0.5 },
+            { value: 'inefficace', label: 'Ineffective', coefficient: 0 },
             { value: 'insuffisant', label: 'Insufficient', coefficient: 0.25 },
-            { value: 'inefficace', label: 'Ineffective', coefficient: 0 }
+            { value: 'ameliorable', label: 'Room for improvement', coefficient: 0.5 },
+            { value: 'efficace', label: 'Effective', coefficient: 0.75 }
         ];
 
     return netMitigationOptions;
@@ -79,7 +79,7 @@ function updateNetSliderUI(probValue) {
         const percentLabel = document.getElementById('netMitigationPercentLabel');
         if (percentLabel) {
             const percent = Math.round((Number(option.coefficient) || 0) * 100);
-            percentLabel.textContent = `Mastery ${percent}%`;
+            percentLabel.textContent = `Reduction ${percent}%`;
         }
     }
 
@@ -132,8 +132,8 @@ function initNetMitigationSlider() {
         button.type = 'button';
         button.className = 'net-slider-mark-button';
         const label = option.label || option.value;
-        button.innerHTML = `<span>${label}</span><span class="net-slider-mark-sub">Mastery ${percent}%</span>`;
-        button.setAttribute('aria-label', `${label} – mastery ${percent}%`);
+        button.innerHTML = `<span>${label}</span><span class="net-slider-mark-sub">Reduction ${percent}%</span>`;
+        button.setAttribute('aria-label', `${label} – reduction ${percent}%`);
         button.setAttribute('aria-pressed', 'false');
         const targetValue = index + 1;
         button.addEventListener('click', () => applySliderValue(targetValue));
@@ -282,7 +282,7 @@ function calculateScore(type) {
             ? clampMitigationReduction(mitigationCoefficient)
             : (Number.isFinite(mitigationCoefficient) ? Math.min(Math.max(mitigationCoefficient, 0), 1) : 0);
         adjustedProb = brutScoreReference;
-        rawScore = brutScoreReference * coefficient;
+        rawScore = brutScoreReference * (1 - coefficient);
 
         const severity = typeof getRiskSeverityFromScore === 'function'
             ? getRiskSeverityFromScore(brutScoreReference)
@@ -326,7 +326,7 @@ function calculateScore(type) {
             const reductionLabel = typeof formatMitigationCoefficient === 'function'
                 ? formatMitigationCoefficient(coefficient)
                 : `${Math.round(coefficient * 100)}%`;
-            coordElement.textContent = `Aggravated Gross ${brutLabel} × Mastery ${reductionLabel}`;
+            coordElement.textContent = `Gross ${brutLabel} × Reduction ${reductionLabel}`;
         } else {
             coordElement.textContent = `P${prob} × I${impact}`;
         }
