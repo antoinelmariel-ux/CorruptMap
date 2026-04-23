@@ -1814,6 +1814,11 @@ body.feedback-mode-paused .feedback-panel * {
 .stat-value.success { color: var(--success-color); }
 .stat-value.warning { color: var(--warning-color); }
 .stat-value.danger { color: var(--danger-color); }
+.stat-card.success .stat-value {
+    font-size: 1.1em;
+    line-height: 1.4;
+    word-break: break-word;
+}
 
 .stat-change {
     font-size: 0.85em;

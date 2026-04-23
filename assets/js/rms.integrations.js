@@ -196,6 +196,17 @@ function writeDashboardPdfTextContent(writer, data, formatters) {
     writer.addParagraph(`Score global de maîtrise : ${formatNumber(metrics.globalScore)} %`);
     writer.addParagraph(`Réduction moyenne du score net : ${formatNumber(metrics.averageReduction, { decimals: 1 })}`);
     writer.addParagraph(`Contrôles actifs : ${formatNumber(metrics.activeControls)} sur ${formatNumber(metrics.totalControls)}`);
+    const effectivenessDistribution = Array.isArray(metrics.controlEffectivenessDistribution)
+        ? metrics.controlEffectivenessDistribution.filter((item) => (Number(item?.count) || 0) > 0)
+        : [];
+    if (effectivenessDistribution.length) {
+        writer.addParagraph("Répartition des contrôles actifs par efficacité :");
+        effectivenessDistribution.forEach((item) => {
+            const label = item?.label || item?.value || 'Non défini';
+            const count = Number(item?.count) || 0;
+            writer.addBullet(`${label} : ${formatNumber(count)} contrôle${count > 1 ? 's' : ''}`);
+        });
+    }
 
     const actionPlanMetrics = metrics.actionPlanStatusMetrics || { total: 0, distribution: [] };
     if (!actionPlanMetrics.total) {

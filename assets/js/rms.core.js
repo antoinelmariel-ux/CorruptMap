@@ -8234,6 +8234,63 @@ class RiskManagementSystem {
             }
         }
 
+        const effectivenessOptions = Array.isArray(this.config?.controlEffectiveness)
+            ? this.config.controlEffectiveness.filter(option => option && option.value !== undefined && option.value !== null)
+            : [];
+        const effectivenessOrder = effectivenessOptions.map(option => String(option.value).toLowerCase());
+        const effectivenessLabelMap = effectivenessOptions.reduce((acc, option) => {
+            const key = String(option.value).toLowerCase();
+            acc[key] = option.label || option.value;
+            return acc;
+        }, {});
+
+        const controlEffectivenessCounts = activeControlsList.reduce((acc, control) => {
+            const rawEffectiveness = control?.effectiveness ?? control?.efficacite ?? '';
+            const normalizedEffectiveness = rawEffectiveness ? String(rawEffectiveness).toLowerCase() : '';
+            const key = normalizedEffectiveness || '__undefined__';
+
+            if (!acc[key]) {
+                acc[key] = { count: 0, value: normalizedEffectiveness, rawValue: rawEffectiveness };
+            }
+
+            acc[key].count += 1;
+            return acc;
+        }, {});
+
+        const controlEffectivenessDistribution = [];
+        effectivenessOrder.forEach((effectivenessValue) => {
+            const key = effectivenessValue || '__undefined__';
+            const entry = controlEffectivenessCounts[key];
+
+            controlEffectivenessDistribution.push({
+                value: effectivenessValue,
+                label: effectivenessLabelMap[effectivenessValue] || entry?.rawValue || effectivenessValue || 'Not defined',
+                count: entry?.count || 0
+            });
+
+            if (entry) {
+                delete controlEffectivenessCounts[key];
+            }
+        });
+
+        Object.keys(controlEffectivenessCounts).forEach((key) => {
+            const entry = controlEffectivenessCounts[key];
+            if (!entry) {
+                return;
+            }
+
+            const normalizedValue = entry.value || '';
+            const label = normalizedValue
+                ? (effectivenessLabelMap[normalizedValue] || entry.rawValue || normalizedValue)
+                : (entry.rawValue || 'Not defined');
+
+            controlEffectivenessDistribution.push({
+                value: normalizedValue,
+                label,
+                count: entry.count || 0
+            });
+        });
+
         const actionPlans = Array.isArray(this.actionPlans) ? this.actionPlans : [];
         const dashboardActionPlans = actionPlans.filter(plan => this.normalizeStatusValue('actionPlan', plan?.status, plan?.statut, plan?.statusLabel) !== 'abandoned');
         const totalActionPlans = dashboardActionPlans.length;
@@ -8310,6 +8367,7 @@ class RiskManagementSystem {
             activeControls,
             totalControls,
             controlTypeDistribution,
+            controlEffectivenessDistribution,
             globalScore,
             averageReduction,
             actionPlanStatusMetrics
@@ -8419,6 +8477,7 @@ class RiskManagementSystem {
             stats,
             activeControls,
             controlTypeDistribution,
+            controlEffectivenessDistribution,
             previous,
             actionPlanStatusMetrics
         } = metrics;
@@ -8479,6 +8538,25 @@ class RiskManagementSystem {
             }).join(' ; ');
         };
 
+        const formatControlEffectivenessDistribution = (distribution) => {
+            if (!Array.isArray(distribution) || distribution.length === 0) {
+                return 'No active control';
+            }
+
+            const nonZeroDistribution = distribution.filter(item => (Number(item?.count) || 0) > 0);
+            if (nonZeroDistribution.length === 0) {
+                return 'No active control';
+            }
+
+            return nonZeroDistribution
+                .map((item) => {
+                    const count = Number(item.count) || 0;
+                    const label = item.label || item.value || 'Not defined';
+                    return `${count} ${label}`;
+                })
+                .join(' • ');
+        };
+
         updateCard('.stat-card.danger', (card) => {
             const valueEl = card.querySelector('.stat-value');
             if (valueEl) {
@@ -8514,12 +8592,12 @@ class RiskManagementSystem {
         updateCard('.stat-card.success', (card) => {
             const valueEl = card.querySelector('.stat-value');
             if (valueEl) {
-                valueEl.textContent = activeControls;
+                valueEl.textContent = formatControlEffectivenessDistribution(controlEffectivenessDistribution);
             }
 
             const delta = activeControls - previousActiveControls;
             const changeEl = card.querySelector('.stat-change');
-            const distributionLabel = formatControlTypeDistribution(controlTypeDistribution, activeControls);
+            const distributionLabel = formatControlEffectivenessDistribution(controlEffectivenessDistribution);
             applyTrend(changeEl, delta, {
                 inverted: false,
                 stableLabel: () => distributionLabel,
