@@ -7815,15 +7815,42 @@ class RiskManagementSystem {
         const risk = this.risks.find(r => idsEqual(r.id, targetId));
         if (!risk) return;
 
-        // Update selected state in details panel
+        const activeView = this.currentView === 'net' ? 'net' : 'brut';
+        const activeViewContainer = document.querySelector(`.matrix-container[data-view="${activeView}"]`);
+        const riskItems = Array.from(document.querySelectorAll('.risk-item[data-risk-id]'));
+
+        // Update selected state in details panel (prioritize the active matrix view list)
         let selectedElement = null;
-        document.querySelectorAll('.risk-item').forEach(item => {
+        riskItems.forEach(item => {
             item.classList.remove('selected');
-            if (idsEqual(item.dataset.riskId, targetId)) {
-                item.classList.add('selected');
-                selectedElement = item;
-            }
+            item.classList.remove('selection-pulse');
         });
+
+        const matchingItems = riskItems.filter(item => idsEqual(item.dataset.riskId, targetId));
+        selectedElement = matchingItems.find(item => activeViewContainer?.contains(item)) || matchingItems[0] || null;
+
+        if (selectedElement) {
+            selectedElement.classList.add('selected');
+            selectedElement.classList.add('selection-pulse');
+            window.setTimeout(() => {
+                selectedElement.classList.remove('selection-pulse');
+            }, 650);
+        }
+
+        if (selectedElement) {
+            this.scrollRiskItemIntoView(selectedElement);
+        }
+
+        // Fallback (legacy behavior) for external views reusing risk-item class
+        if (!selectedElement) {
+            document.querySelectorAll('.risk-item').forEach(item => {
+                item.classList.remove('selected');
+                if (idsEqual(item.dataset.riskId, targetId)) {
+                    item.classList.add('selected');
+                    selectedElement = item;
+                }
+            });
+        }
 
         if (selectedElement) {
             this.scrollRiskItemIntoView(selectedElement);
@@ -7892,22 +7919,22 @@ class RiskManagementSystem {
                 titleElement.textContent = title;
             }
 
-            const scoredRisks = filteredRisks.map(risk => {
+            const scoredRisks = filteredRisks.map(entry => {
                 if (mode === 'net') {
                     const netInfo = typeof getRiskNetInfo === 'function'
-                        ? getRiskNetInfo(risk)
+                        ? getRiskNetInfo(entry)
                         : { score: 0, brutScore: 0, coefficient: 0, label: 'Ineffective', effectiveness: 'inefficace' };
-                    return { risk, score: netInfo.score, brutScore: netInfo.brutScore, coefficient: netInfo.coefficient, label: netInfo.label, effectiveness: netInfo.effectiveness };
+                    return { risk: entry, score: netInfo.score, brutScore: netInfo.brutScore, coefficient: netInfo.coefficient, label: netInfo.label, effectiveness: netInfo.effectiveness };
                 }
 
-                const baseProb = Number(risk?.[config.probKey]) || 0;
-                const impact = Number(risk?.[config.impactKey]) || 0;
+                const baseProb = Number(entry?.[config.probKey]) || 0;
+                const impact = Number(entry?.[config.impactKey]) || 0;
                 const coefficient = typeof getRiskAggravatingCoefficient === 'function'
-                    ? getRiskAggravatingCoefficient(risk)
+                    ? getRiskAggravatingCoefficient(entry)
                     : 1;
                 const prob = baseProb * coefficient;
                 const baseScore = baseProb * impact;
-                return { risk, prob, impact, coefficient, baseScore, score: prob * impact };
+                return { risk: entry, prob, impact, coefficient, baseScore, score: prob * impact };
             }).sort((a, b) => {
                 if (b.score !== a.score) return b.score - a.score;
                 if (mode === 'net') {
