@@ -7423,6 +7423,7 @@ class RiskManagementSystem {
         const brutGrid = document.getElementById('matrixGridBrut');
         if (brutGrid) {
             brutGrid.innerHTML = '';
+            brutGrid.classList.remove('net-grid');
             for (let impact = 4; impact >= 1; impact--) {
                 for (let prob = 1; prob <= 4; prob++) {
                     const cell = document.createElement('div');
@@ -7444,6 +7445,7 @@ class RiskManagementSystem {
         const netGrid = document.getElementById('matrixGridNet');
         if (netGrid) {
             netGrid.innerHTML = '';
+            netGrid.classList.add('net-grid');
 
             const mitigationOptions = typeof getMitigationEffectivenessOptions === 'function'
                 ? getMitigationEffectivenessOptions()
@@ -7474,28 +7476,41 @@ class RiskManagementSystem {
                 return match?.className || 'level-1';
             };
 
+            const subCellCount = 2;
             brutLevels.forEach(level => {
                 mitigationOptions.forEach((option) => {
-                    const cell = document.createElement('div');
-                    cell.className = 'matrix-cell';
-                    cell.dataset.brutLevel = level.value;
-                    cell.dataset.effectiveness = option.value;
-
                     const coefficient = Number(option.coefficient) || 0;
                     const mitigationReduction = Math.min(Math.max(coefficient, 0), 1);
                     const remainingFactor = 1 - mitigationReduction;
-                    const minScore = level.min * remainingFactor;
-                    const maxScore = level.max * remainingFactor;
+                    const levelSpan = level.max - level.min;
 
-                    const representativeScore = (minScore + maxScore) / 2;
-                    const primaryLevel = getSeverityClassFromScore(representativeScore);
-                    cell.classList.add(primaryLevel);
+                    for (let subRow = 0; subRow < subCellCount; subRow++) {
+                        const grossBandMax = level.max - ((levelSpan / subCellCount) * subRow);
+                        const grossBandMin = level.max - ((levelSpan / subCellCount) * (subRow + 1));
+                        const netBandMin = grossBandMin * remainingFactor;
+                        const netBandMax = grossBandMax * remainingFactor;
 
-                    // Conserve strictement 4 couleurs de niveaux de risque.
-                    // On ne mélange plus les teintes dans une même case.
-                    cell.style.background = '';
+                        for (let subCol = 0; subCol < subCellCount; subCol++) {
+                            const cell = document.createElement('div');
+                            cell.className = 'matrix-cell';
+                            cell.dataset.brutLevel = level.value;
+                            cell.dataset.effectiveness = option.value;
+                            cell.dataset.subRow = String(subRow);
+                            cell.dataset.subCol = String(subCol);
 
-                    netGrid.appendChild(cell);
+                            const withinBandFactor = subCol === 0 ? 0.75 : 0.25;
+                            const representativeScore = netBandMin + ((netBandMax - netBandMin) * withinBandFactor);
+                            const primaryLevel = getSeverityClassFromScore(representativeScore);
+                            cell.classList.add(primaryLevel);
+
+                            if (subCol === 0) cell.classList.add('merged-right');
+                            if (subCol === 1) cell.classList.add('merged-left');
+                            if (subRow === 0) cell.classList.add('merged-bottom');
+                            if (subRow === 1) cell.classList.add('merged-top');
+
+                            netGrid.appendChild(cell);
+                        }
+                    }
                 });
             });
             const colLabels = document.getElementById('matrixNetColLabels');
@@ -7518,6 +7533,14 @@ class RiskManagementSystem {
     renderRiskPoints() {
         const baseRisks = Array.isArray(this.risks) ? this.risks : [];
         const filteredRisks = this.getFilteredRisks(baseRisks);
+        const mitigationOptions = typeof getMitigationEffectivenessOptions === 'function'
+            ? getMitigationEffectivenessOptions()
+            : [
+                { value: 'efficace', label: 'Effective', coefficient: 0.75 },
+                { value: 'ameliorable', label: 'Room for improvement', coefficient: 0.5 },
+                { value: 'insuffisant', label: 'Insufficient', coefficient: 0.25 },
+                { value: 'inefficace', label: 'Ineffective', coefficient: 0 }
+            ];
 
         const viewConfigs = {
             brut: {
@@ -7616,15 +7639,14 @@ class RiskManagementSystem {
                     const netRange = Math.max(0.01, netMax - netMin);
                     const normalizedNet = Math.max(0, Math.min(0.999, (netScore - netMin) / netRange));
 
-                    const virtualCol = Math.min(1, Math.floor(normalizedNet * 2));
-                    const virtualRow = Math.min(1, Math.floor((1 - normalizedBrut) * 2));
-                    const withinCol = (virtualCol + 0.5) / 2;
-                    const withinRow = (virtualRow + 0.5) / 2;
-
+                    const withinCol = Math.max(0.001, Math.min(0.999, 1 - normalizedNet));
+                    const withinRow = Math.max(0.001, Math.min(0.999, 1 - normalizedBrut));
                     const leftPercent = ((colIndex + withinCol) / mitigationOrder.length) * 100;
                     const yFromTop = rowIndex + withinRow;
                     const bottomPercent = ((brutLevelsOrder.length - yFromTop) / brutLevelsOrder.length) * 100;
 
+                    const virtualCol = Math.min(1, Math.floor(withinCol * 2));
+                    const virtualRow = Math.min(1, Math.floor(withinRow * 2));
                     const key = `${colIndex}-${rowIndex}-${virtualCol}-${virtualRow}`;
                     const index = cellCounts[key] || 0;
                     cellCounts[key] = index + 1;
