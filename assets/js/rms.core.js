@@ -7475,6 +7475,13 @@ class RiskManagementSystem {
                 return severityClassMap[level] || 'level-1';
             };
 
+            const severityThresholds = [
+                { key: 'critique', min: 12, max: Number.POSITIVE_INFINITY },
+                { key: 'fort', min: 6, max: 12 },
+                { key: 'modere', min: 3, max: 6 },
+                { key: 'faible', min: Number.NEGATIVE_INFINITY, max: 3 }
+            ];
+
             const brutBounds = {
                 critique: { min: 12, max: 16 },
                 fort: { min: 6, max: 12 },
@@ -7498,6 +7505,22 @@ class RiskManagementSystem {
                     const netMax = levelBounds.max * (1 - mitigationReduction);
                     cell.dataset.netMin = String(netMin);
                     cell.dataset.netMax = String(netMax);
+
+                    const subGrid = document.createElement('div');
+                    subGrid.className = 'matrix-net-subgrid';
+                    severityThresholds.forEach((threshold) => {
+                        const subCell = document.createElement('div');
+                        const overlapMin = Math.max(netMin, threshold.min);
+                        const overlapMax = Math.min(netMax, threshold.max);
+                        const hasOverlap = overlapMax > overlapMin;
+                        const severityClass = severityClassMap[threshold.key] || 'level-1';
+                        subCell.className = `matrix-net-subcell ${severityClass}${hasOverlap ? '' : ' muted'}`;
+                        if (hasOverlap) {
+                            subCell.title = `${threshold.key} (${overlapMin.toFixed(2)} - ${overlapMax.toFixed(2)})`;
+                        }
+                        subGrid.appendChild(subCell);
+                    });
+                    cell.appendChild(subGrid);
                     netGrid.appendChild(cell);
                 });
             });
