@@ -225,7 +225,7 @@ function applyControlFilters(filterKey, value, sourceElement) {
 
     const normalizedValue = value == null ? '' : String(value);
 
-    const defaultFilters = { type: '', origin: '', status: '', search: '' };
+    const defaultFilters = { type: '', search: '' };
     if (!rms.controlFilters) {
         rms.controlFilters = { ...defaultFilters };
     } else {
@@ -247,7 +247,7 @@ function searchControls(searchTerm, sourceElement) {
 
     const normalizedValue = searchTerm == null ? '' : String(searchTerm);
 
-    const defaultFilters = { type: '', origin: '', status: '', search: '' };
+    const defaultFilters = { type: '', search: '' };
     if (!rms.controlFilters) {
         rms.controlFilters = { ...defaultFilters };
     } else {

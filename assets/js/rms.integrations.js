@@ -3138,9 +3138,10 @@ function applyPatch() {
           setControlFieldValue('controlName', lastControlData.name);
           setControlFieldValue('controlReference', lastControlData.reference);
           setControlFieldValue('controlGroupCode', lastControlData.groupCode);
+          setControlFieldValue('controlType', lastControlData.type);
+          setControlFieldValue('controlOwner', lastControlData.owner);
           setControlFieldValue('controlMode', lastControlData.mode);
           setControlFieldValue('controlEffectiveness', lastControlData.effectiveness);
-          setControlFieldValue('controlStatus', lastControlData.status);
           setControlFieldValue('controlDescription', lastControlData.description);
           selectedRisksForControl = [...(lastControlData.risks || [])];
         }
@@ -3180,9 +3181,10 @@ function applyPatch() {
         ensureControlReference(control, control.id);
         setControlFieldValue('controlReference', control.reference);
         setControlFieldValue('controlGroupCode', control.groupCode);
+        setControlFieldValue('controlType', control.type);
+        setControlFieldValue('controlOwner', control.owner);
         setControlFieldValue('controlMode', control.mode);
         setControlFieldValue('controlEffectiveness', control.effectiveness);
-        setControlFieldValue('controlStatus', control.status);
         setControlFieldValue('controlDescription', control.description);
 
         document.getElementById('controlModalTitle').textContent = 'Edit le Contrôle';
@@ -3353,9 +3355,10 @@ function applyPatch() {
           name: String(formData.get('name') || '').trim(),
           reference: String(formData.get('reference') || '').trim(),
           groupCode: String(formData.get('groupCode') || '').trim(),
+          type: formData.get('type'),
+          owner: String(formData.get('owner') || '').trim(),
           mode: formData.get('mode'),
           effectiveness: formData.get('effectiveness'),
-          status: formData.get('status'),
           description: formData.get('description'),
           risks: [...selectedRisksForControl]
         };
@@ -3368,10 +3371,6 @@ function applyPatch() {
         if (isDraftControl) {
           controlData.name = `Contrôle brouillon (${new Date().toLocaleDateString('fr-FR')})`;
         }
-        if (!controlData.status || isDraftControl) {
-          controlData.status = 'brouillon';
-        }
-
         let resultingControlId = currentEditingControlId || null;
         const context = (window.controlCreationContext && window.controlCreationContext.fromRisk)
           ? window.controlCreationContext
