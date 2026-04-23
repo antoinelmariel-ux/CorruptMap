@@ -76,7 +76,7 @@
     const state = {
         view: 'scenarios',
         data: {
-            version: '2.14.92',
+            version: '2.14.93',
             scenarios: [],
             selectedId: null
         }
@@ -155,16 +155,17 @@
     }
 
     function scoreToLevel(score) {
-        if (score >= 13) return 4;
-        if (score >= 9) return 3;
-        if (score >= 5) return 2;
+        if (score >= 12) return 4;
+        if (score >= 6) return 3;
+        if (score >= 3) return 2;
         return 1;
     }
 
     function scoreLabel(score) {
-        if (score >= 12) return 'High';
-        if (score >= 6) return 'Moderate';
-        return 'Low';
+        if (score >= 12) return 'Critical Risk';
+        if (score >= 6) return 'High Risk';
+        if (score >= 3) return 'Moderate Risk';
+        return 'Low Risk';
     }
 
     function replaceScenariosFromText(inputText) {

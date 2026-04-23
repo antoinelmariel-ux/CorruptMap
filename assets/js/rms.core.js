@@ -7431,8 +7431,8 @@ class RiskManagementSystem {
                     cell.dataset.impact = impact;
 
                     const riskLevel = prob * impact;
-                    if (riskLevel <= 4) cell.classList.add('level-1');
-                    else if (riskLevel <= 8) cell.classList.add('level-2');
+                    if (riskLevel < 3) cell.classList.add('level-1');
+                    else if (riskLevel < 6) cell.classList.add('level-2');
                     else if (riskLevel <= 12) cell.classList.add('level-3');
                     else cell.classList.add('level-4');
 
@@ -7455,10 +7455,10 @@ class RiskManagementSystem {
                 ];
 
             const brutLevels = [
-                { value: 'critique', label: 'Critique', range: 'Score ≥ 12', reference: 13.5 },
-                { value: 'fort', label: 'Fort', range: '6 ≤ score < 12', reference: 9 },
-                { value: 'modere', label: 'Modéré', range: '3 ≤ score < 6', reference: 4.5 },
-                { value: 'faible', label: 'Faible', range: 'Score < 3', reference: 2 }
+                { value: 'critique', label: 'Critical Risk', range: 'score ≥ 12', reference: 14 },
+                { value: 'fort', label: 'High Risk', range: '6 ≤ score < 12', reference: 9 },
+                { value: 'modere', label: 'Moderate Risk', range: '3 ≤ score < 6', reference: 4.5 },
+                { value: 'faible', label: 'Low Risk', range: 'score < 3', reference: 2 }
             ];
 
             const severityClassMap = {
@@ -7528,10 +7528,10 @@ class RiskManagementSystem {
             : ['inefficace', 'insuffisant', 'ameliorable', 'efficace'];
         const brutLevelsOrder = ['critique', 'fort', 'modere', 'faible'];
         const severityLabelMap = {
-            critique: 'Critique',
-            fort: 'Fort',
-            modere: 'Modéré',
-            faible: 'Faible'
+            critique: 'Critical Risk',
+            fort: 'High Risk',
+            modere: 'Moderate Risk',
+            faible: 'Low Risk'
         };
         Object.entries(viewConfigs).forEach(([viewKey, config]) => {
             const grid = document.getElementById(config.gridId);
@@ -8889,9 +8889,9 @@ class RiskManagementSystem {
         };
 
         const severityLabels = {
-            critique: 'Critical',
-            fort: 'High',
-            modere: 'Moderate'
+            critique: 'Critical Risk',
+            fort: 'High Risk',
+            modere: 'Moderate Risk'
         };
 
         const acceptableSeverities = new Set(['modere', 'fort', 'critique']);
