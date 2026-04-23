@@ -7482,7 +7482,8 @@ class RiskManagementSystem {
                     cell.dataset.brutLevel = level.value;
                     cell.dataset.effectiveness = option.value;
                     const coefficient = Number(option.coefficient) || 0;
-                    const referenceScore = level.reference * coefficient;
+                    const mitigationReduction = Math.min(Math.max(coefficient, 0), 1);
+                    const referenceScore = level.reference * (1 - mitigationReduction);
                     cell.classList.add(getSeverityClass(referenceScore));
                     netGrid.appendChild(cell);
                 });
