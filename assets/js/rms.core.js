@@ -7455,24 +7455,39 @@ class RiskManagementSystem {
                 ];
 
             const brutLevels = [
-                { value: 'critique', label: 'Critical Risk', range: 'score ≥ 12', reference: 14 },
-                { value: 'fort', label: 'High Risk', range: '6 ≤ score < 12', reference: 9 },
-                { value: 'modere', label: 'Moderate Risk', range: '3 ≤ score < 6', reference: 4.5 },
-                { value: 'faible', label: 'Low Risk', range: 'score < 3', reference: 2 }
+                { value: 'critique', label: 'Critical Risk', min: 12, max: 16 },
+                { value: 'fort', label: 'High Risk', min: 6, max: 12 },
+                { value: 'modere', label: 'Moderate Risk', min: 3, max: 6 },
+                { value: 'faible', label: 'Low Risk', min: 0, max: 3 }
             ];
 
-            const severityClassMap = {
-                faible: 'level-1',
-                modere: 'level-2',
-                fort: 'level-3',
-                critique: 'level-4'
+            const severityStops = [
+                { min: 0, max: 3, className: 'level-1' },
+                { min: 3, max: 6, className: 'level-2' },
+                { min: 6, max: 12, className: 'level-3' },
+                { min: 12, max: Infinity, className: 'level-4' }
+            ];
+
+            const levelColorMap = {
+                'level-1': 'rgba(46, 204, 113, 0.5)',
+                'level-2': 'rgba(241, 196, 15, 0.5)',
+                'level-3': 'rgba(230, 126, 34, 0.5)',
+                'level-4': 'rgba(231, 76, 60, 0.6)'
             };
 
-            const getSeverityClass = (score) => {
-                const level = typeof getRiskSeverityFromScore === 'function'
-                    ? getRiskSeverityFromScore(score)
-                    : (score >= 12 ? 'critique' : score >= 6 ? 'fort' : score >= 3 ? 'modere' : 'faible');
-                return severityClassMap[level] || 'level-1';
+            const getSeveritySegments = (minScore, maxScore) => {
+                const segments = [];
+                severityStops.forEach(stop => {
+                    const overlapStart = Math.max(minScore, stop.min);
+                    const overlapEnd = Math.min(maxScore, stop.max);
+                    if (overlapEnd > overlapStart) {
+                        segments.push({
+                            className: stop.className,
+                            size: overlapEnd - overlapStart
+                        });
+                    }
+                });
+                return segments;
             };
 
             brutLevels.forEach(level => {
@@ -7481,10 +7496,29 @@ class RiskManagementSystem {
                     cell.className = 'matrix-cell';
                     cell.dataset.brutLevel = level.value;
                     cell.dataset.effectiveness = option.value;
+
                     const coefficient = Number(option.coefficient) || 0;
                     const mitigationReduction = Math.min(Math.max(coefficient, 0), 1);
-                    const referenceScore = level.reference * (1 - mitigationReduction);
-                    cell.classList.add(getSeverityClass(referenceScore));
+                    const remainingFactor = 1 - mitigationReduction;
+                    const minScore = level.min * remainingFactor;
+                    const maxScore = level.max * remainingFactor;
+                    const segments = getSeveritySegments(minScore, maxScore);
+
+                    const primaryLevel = segments[segments.length - 1]?.className || 'level-1';
+                    cell.classList.add(primaryLevel);
+
+                    if (segments.length >= 2) {
+                        const lowerSegment = segments[0];
+                        const upperSegment = segments[segments.length - 1];
+                        const total = lowerSegment.size + upperSegment.size;
+                        const lowerPct = total > 0 ? (lowerSegment.size / total) * 100 : 50;
+                        const upperPct = Math.max(0, Math.min(100, 100 - lowerPct));
+                        const lowerColor = levelColorMap[lowerSegment.className] || levelColorMap['level-1'];
+                        const upperColor = levelColorMap[upperSegment.className] || levelColorMap['level-1'];
+
+                        cell.style.background = `linear-gradient(to top, ${lowerColor} 0 ${lowerPct}%, ${upperColor} ${lowerPct}% 100%)`;
+                    }
+
                     netGrid.appendChild(cell);
                 });
             });
