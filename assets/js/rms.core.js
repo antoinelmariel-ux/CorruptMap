@@ -7397,10 +7397,10 @@ class RiskManagementSystem {
             const mitigationOptions = typeof getMitigationEffectivenessOptions === 'function'
                 ? getMitigationEffectivenessOptions()
                 : [
-                    { value: 'inefficace', label: 'Inefficace', coefficient: 0 },
-                    { value: 'insuffisant', label: 'Insuffisant', coefficient: 0.25 },
-                    { value: 'ameliorable', label: 'Améliorable', coefficient: 0.5 },
-                    { value: 'efficace', label: 'Efficace', coefficient: 0.75 }
+                    { value: 'inefficace', label: 'Ineffective', coefficient: 0 },
+                    { value: 'insuffisant', label: 'Insufficient', coefficient: 0.25 },
+                    { value: 'ameliorable', label: 'Room for improvement', coefficient: 0.5 },
+                    { value: 'efficace', label: 'Effective', coefficient: 0.75 }
                 ];
 
             const brutLevels = [
@@ -7565,7 +7565,7 @@ class RiskManagementSystem {
                 if (config.mode === 'net') {
                     const netInfo = typeof getRiskNetInfo === 'function'
                         ? getRiskNetInfo(risk)
-                        : { score: 0, brutScore: 0, coefficient: 0, effectiveness: 'inefficace', label: 'Inefficace' };
+                        : { score: 0, brutScore: 0, coefficient: 0, effectiveness: 'inefficace', label: 'Ineffective' };
                     const brutLevel = typeof getRiskBrutLevel === 'function'
                         ? getRiskBrutLevel(risk)
                         : (typeof getRiskSeverityFromScore === 'function'
@@ -7896,7 +7896,7 @@ class RiskManagementSystem {
                 if (mode === 'net') {
                     const netInfo = typeof getRiskNetInfo === 'function'
                         ? getRiskNetInfo(risk)
-                        : { score: 0, brutScore: 0, coefficient: 0, label: 'Inefficace', effectiveness: 'inefficace' };
+                        : { score: 0, brutScore: 0, coefficient: 0, label: 'Ineffective', effectiveness: 'inefficace' };
                     return { risk, score: netInfo.score, brutScore: netInfo.brutScore, coefficient: netInfo.coefficient, label: netInfo.label, effectiveness: netInfo.effectiveness };
                 }
 
@@ -8269,7 +8269,7 @@ class RiskManagementSystem {
         const enrichedRisks = filteredRisks.map(risk => {
             const netInfo = typeof getRiskNetInfo === 'function'
                 ? getRiskNetInfo(risk)
-                : { score: 0, brutScore: 0, coefficient: 0, label: 'Inefficace', reduction: 0 };
+                : { score: 0, brutScore: 0, coefficient: 0, label: 'Ineffective', reduction: 0 };
             return { risk, score: netInfo.score, brutScore: netInfo.brutScore, coefficient: netInfo.coefficient, label: netInfo.label, reduction: netInfo.reduction };
         }).filter(entry => Number.isFinite(entry.score));
 
@@ -8968,7 +8968,7 @@ class RiskManagementSystem {
             const enrichedRisks = filteredRisks.map(risk => {
                 const netInfo = typeof getRiskNetInfo === 'function'
                     ? getRiskNetInfo(risk)
-                    : { score: 0, brutScore: 0, coefficient: 0, reduction: 0, label: 'Inefficace' };
+                    : { score: 0, brutScore: 0, coefficient: 0, reduction: 0, label: 'Ineffective' };
                 return { risk, score: netInfo.score, brutScore: netInfo.brutScore, coefficient: netInfo.coefficient, reduction: netInfo.reduction, label: netInfo.label };
             }).filter(entry => Number.isFinite(entry.score));
 

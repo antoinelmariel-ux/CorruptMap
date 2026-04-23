@@ -298,10 +298,10 @@ const MITIGATION_EFFECTIVENESS_ORDER = Object.freeze([
 ]);
 
 const MITIGATION_EFFECTIVENESS_SCALE = Object.freeze({
-    inefficace: { label: 'Inefficace', coefficient: 0 },
-    insuffisant: { label: 'Insuffisant', coefficient: 0.25 },
-    ameliorable: { label: 'Améliorable', coefficient: 0.5 },
-    efficace: { label: 'Efficace', coefficient: 0.75 }
+    inefficace: { label: 'Ineffective', coefficient: 0 },
+    insuffisant: { label: 'Insufficient', coefficient: 0.25 },
+    ameliorable: { label: 'Room for improvement', coefficient: 0.5 },
+    efficace: { label: 'Effective', coefficient: 0.75 }
 });
 
 const DEFAULT_MITIGATION_EFFECTIVENESS = 'insuffisant';

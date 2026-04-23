@@ -40,7 +40,7 @@ const RISK_IMPACT_INFO = {
 
 const RISK_STATE_CONFIG = {
     brut: {
-        label: 'Risque Brut aggravé',
+        label: 'Aggravated Gross Risk',
         probInput: 'probBrut',
         impactInput: 'impactBrut',
         scoreElement: 'scoreBrut',
@@ -52,7 +52,7 @@ const RISK_STATE_CONFIG = {
         descriptionContainer: 'matrixDescriptionBrut'
     },
     net: {
-        label: 'Risque Net',
+        label: 'Net Risk',
         probInput: 'probNet',
         impactInput: 'impactNet',
         scoreElement: 'scoreNet',
@@ -68,88 +68,90 @@ const RISK_STATE_CONFIG = {
 
 const MITIGATION_EFFECTIVENESS_DESCRIPTIONS = Object.freeze({
     inefficace: `
-        <p><strong>Gouvernance</strong></p>
+        <p><strong>Governance</strong></p>
         <ul>
-<li>Aucun engagement du management</li>
-<li>Aucun principe d'&eacute;thique et de conformit&eacute; communiqu&eacute; ou non appliqu&eacute;</li>
-<li>Pas de prise en charge de la fonction Ethique et Conformit&eacute;</li>
-<li>Aucun reporting / suivi des sujets en mati&egrave;re d'&eacute;thique et de conformit&eacute;</li>
+<li>No management commitment</li>
+<li>No ethics and compliance principles communicated or enforced</li>
+<li>No dedicated ethics and compliance function</li>
+<li>No reporting or monitoring of ethics and compliance topics</li>
         </ul>
-             <p><strong>Proc&eacute;dures et contr&ocirc;les</strong></p>
-             <ul>
-             <li>Absence de proc&eacute;dure / processus</li>
-<li>Processus inefficaces/non pertinents, non appliqu&eacute;s ou non diffus&eacute;s</li>
-<li>Absence de contr&ocirc;le</li>
-<li>Contr&ocirc;les inefficaces/non pertinent ou non appliqu&eacute;s</li>
+        <p><strong>Procedures and controls</strong></p>
+        <ul>
+<li>Lack of procedures/processes</li>
+<li>Ineffective or irrelevant processes, not implemented or not communicated</li>
+<li>Lack of controls</li>
+<li>Ineffective, irrelevant, or unenforced controls</li>
 </ul>
-<p><strong>Formation</strong></p>
+<p><strong>Training</strong></p>
 <ul>
-<li>Absence de formation ou de sensibilisation</li>
-<li>Formation inefficace/non pertinente</li>
-<li>Taux de formation tr&egrave;s faible (&le; 20%)</li>
+<li>Lack of training or awareness</li>
+<li>Ineffective or irrelevant training</li>
+<li>Very low training rate (≤ 20%)</li>
 </ul>
     `,
     insuffisant: `
-        <p><strong>Gouvernance</strong></p>
-           <ul>
-<li>Engagement informel du management</li>
-<li>Peu de communications / communications informelles ou partielles sur le respect des principes d'&eacute;thique et de conformit&eacute;</li>
-<li>Pas d'&eacute;quipe officiellement en charge de la fonction Ethique et Conformit&eacute;</li>
-<li>Suivi informel des sujets d'&eacute;thique et de conformit&eacute; mais aucun reporting au management</li>
+        <p><strong>Governance</strong></p>
+        <ul>
+<li>Informal commitment from management</li>
+<li>Limited, informal, or partial communication regarding adherence to ethics and compliance principles</li>
+<li>No team officially responsible for the ethics and compliance function</li>
+<li>Informal monitoring of ethics and compliance issues with no reporting to management</li>
 </ul>
- <p><strong>Proc&eacute;dures et contr&ocirc;les</strong></p>
- <ul>
-<li>Processus informels (pas de proc&eacute;dures formalis&eacute;es), diffus&eacute;s partiellement &agrave; l'oral, et partiellement appliqu&eacute;s</li>
-<li>Contr&ocirc;les ponctuels non formalis&eacute;s et partiellement appliqu&eacute;s</li>
-</ul>
-<p><strong>Formation</strong></p>
+<p><strong>Procedures and controls</strong></p>
 <ul>
-<li>Formation ou sensibilisation informelle (orale), ponctuelle et/ou partielle des collaborateurs et des nouveaux arrivants</li>
-<li>Taux de formation peu &eacute;lev&eacute; (entre 20% et 50%)</li>
+<li>Informal processes (no formalized procedures), partially communicated verbally and partially implemented</li>
+<li>Ad hoc, non-formalized controls that are partially implemented</li>
+</ul>
+<p><strong>Training</strong></p>
+<ul>
+<li>Informal (verbal), ad hoc, and/or partial training or awareness-raising for employees and new hires</li>
+<li>Low training rate (between 20% and 50%)</li>
 </ul>
     `,
     ameliorable: `
-        <p><strong>Gouvernance</strong></p>
-      <ul>
-<li>Engagement formel / passif du management (r&eacute;actif en cas de sollicitation de l'&eacute;quipe en charge de la fonction Ethique et Conformit&eacute;, sujet &agrave; l'ordre du jour sur sollicitation, etc.)<br /> - Communications irr&eacute;guli&egrave;res sur le respect des principes d'&eacute;thique et de conformit&eacute; (pas de plan de communication particulier)</li>
-<li>Equipe en charge de la fonction Ethique et Conformit&eacute; en plus d'autres fonctions (temps d&eacute;di&eacute; pas toujours suffisant) / Pas de Comit&eacute; Ethique et Conformit&eacute;</li>
-<li>Reporting irr&eacute;gulier au management sur le suivi des actions</li>
+        <p><strong>Governance</strong></p>
+        <ul>
+<li>Formal/passive management commitment (reactive upon request, limited proactive ownership)</li>
+<li>Irregular communications on ethics and compliance principles (no dedicated communication plan)</li>
+<li>Ethics and compliance team also handling other responsibilities; no dedicated committee</li>
+<li>Irregular reporting to management on action follow-up</li>
 </ul>
- <p><strong>Proc&eacute;dures et contr&ocirc;les</strong></p>
- <ul>
-<li>Proc&eacute;dures partiellement formalis&eacute;es, diffus&eacute;es, appliqu&eacute;es, contr&ocirc;l&eacute;es et/ou audit&eacute;es</li>
-<li>Mises &agrave; jour irr&eacute;guli&egrave;res des proc&eacute;dures</li>
-<li>Contr&ocirc;les partiellement formalis&eacute;s ou document&eacute;s, sans actions correctives syst&eacute;matiques, non r&eacute;guli&egrave;rement revus par le contr&ocirc;le interne ni r&eacute;guli&egrave;rement audit&eacute;s</li>
-</ul>
-<p><strong>Formation</strong></p>
+<p><strong>Procedures and controls</strong></p>
 <ul>
-<li>Formation standard &agrave; l'ensemble des collaborateurs (pas de ciblage particulier des populations les plus concern&eacute;es)</li>
-<li>Pas de plan de formation &eacute;tabli ou non mis &agrave; jour</li>
-<li>Taux de formation perfectible (entre 50% et 90%)</li>
-<li>Absence de relances syst&eacute;matiques des collaborateurs</li>
+<li>Procedures partially formalized, communicated, implemented, monitored, and/or audited</li>
+<li>Irregular updates to procedures</li>
+<li>Controls partially formalized/documented, without systematic corrective actions or regular reviews/audits</li>
+</ul>
+<p><strong>Training</strong></p>
+<ul>
+<li>Standard training for all employees (no specific targeting of most exposed groups)</li>
+<li>No training plan established or not updated</li>
+<li>Training completion rate could be improved (between 50% and 90%)</li>
+<li>Lack of systematic follow-ups with employees</li>
 </ul>
     `,
     efficace: `
-        <p><strong>Gouvernance</strong></p>
-     <ul>
-<li>Engagement actif du management (proactivit&eacute; dans la d&eacute;finition des principes d'&eacute;thique et de conformit&eacute;, implication forte dans le suivi et les d&eacute;cisions, sujet r&eacute;current &agrave; l'ordre du jour des comit&eacute;s de direction, etc.)</li>
-<li>Communications r&eacute;guli&egrave;res sur le respect des principes d'&eacute;thique et de conformit&eacute; (plan de communication d&eacute;fini)</li>
-<li>Equipe en charge de la fonction Ethique et Conformit&eacute; (temps d&eacute;di&eacute; suffisant) et Comit&eacute; Ethique et Conformit&eacute; en place et actif</li>
-<li>Reporting r&eacute;gulier au management sur le suivi des actions</li>
+        <p><strong>Governance</strong></p>
+        <ul>
+<li>Active management commitment with strong involvement in monitoring and decision-making</li>
+<li>Regular communications on adherence to ethics and compliance principles (defined communication plan)</li>
+<li>Dedicated ethics and compliance team and an active committee in place</li>
+<li>Regular reporting to management on action monitoring</li>
 </ul>
-<p><strong>Proc&eacute;dures et contr&ocirc;les</strong></p>
+<p><strong>Procedures and controls</strong></p>
 <ul>
-<li>Proc&eacute;dures syst&eacute;matiquement formalis&eacute;es, diffus&eacute;es, appliqu&eacute;es, contr&ocirc;l&eacute;es et audit&eacute;es</li>
-<li>Contr&ocirc;les syst&eacute;matiques, formalis&eacute;s et document&eacute;s, faisant l'objet d'actions correctives, de revues de contr&ocirc;le interne et d'audits</li>
+<li>Procedures systematically formalized, communicated, implemented, monitored, and audited</li>
+<li>Systematic, formalized, and documented controls with corrective actions, internal reviews, and audits</li>
 </ul>
-<p><strong>Formation</strong></p>
+<p><strong>Training</strong></p>
 <ul>
-<li>Formations r&eacute;guli&egrave;res d&eacute;di&eacute;es selon les populations cibl&eacute;es, privil&eacute;giant le pr&eacute;sentiel pour les populations les plus expos&eacute;es</li>
-<li>Plan de formation &eacute;tabli selon les populations cibl&eacute;es, int&eacute;grant les nouveaux arrivants et d&eacute;finissant les fr&eacute;quences de formation</li>
-<li>Taux de formation &eacute;lev&eacute; (&ge; 90%)</li>
+<li>Regular, targeted training tailored to specific groups, prioritizing in-person sessions for most exposed populations</li>
+<li>Training plan established by target groups, integrating new hires and defining training frequencies</li>
+<li>High training rate (≥ 90%)</li>
 </ul>
     `
 });
+
 
 window.RISK_PROBABILITY_INFO = RISK_PROBABILITY_INFO;
 window.RISK_IMPACT_INFO = RISK_IMPACT_INFO;
