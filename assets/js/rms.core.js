@@ -7641,9 +7641,10 @@ class RiskManagementSystem {
 
                     const withinCol = Math.max(0.001, Math.min(0.999, 1 - normalizedNet));
                     const withinRow = Math.max(0.001, Math.min(0.999, 1 - normalizedBrut));
-                    const leftPercent = ((colIndex + withinCol) / mitigationOrder.length) * 100;
-                    const yFromTop = rowIndex + withinRow;
-                    const bottomPercent = ((brutLevelsOrder.length - yFromTop) / brutLevelsOrder.length) * 100;
+                    const rawLeftPercent = ((colIndex + withinCol) / mitigationOrder.length) * 100;
+                    const rawBottomPercent = ((brutLevelsOrder.length - (rowIndex + withinRow)) / brutLevelsOrder.length) * 100;
+                    const leftPercent = Math.max(2.5, Math.min(97.5, rawLeftPercent));
+                    const bottomPercent = Math.max(2.5, Math.min(97.5, rawBottomPercent));
 
                     const virtualCol = Math.min(1, Math.floor(withinCol * 2));
                     const virtualRow = Math.min(1, Math.floor(withinRow * 2));
