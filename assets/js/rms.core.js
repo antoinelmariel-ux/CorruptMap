@@ -7475,6 +7475,20 @@ class RiskManagementSystem {
                 return severityClassMap[level] || 'level-1';
             };
 
+            const severityThresholds = [
+                { key: 'critique', min: 12, max: Number.POSITIVE_INFINITY },
+                { key: 'fort', min: 6, max: 12 },
+                { key: 'modere', min: 3, max: 6 },
+                { key: 'faible', min: Number.NEGATIVE_INFINITY, max: 3 }
+            ];
+
+            const brutBounds = {
+                critique: { min: 12, max: 16 },
+                fort: { min: 6, max: 12 },
+                modere: { min: 3, max: 6 },
+                faible: { min: 0, max: 3 }
+            };
+
             brutLevels.forEach(level => {
                 mitigationOptions.forEach(option => {
                     const cell = document.createElement('div');
@@ -7485,6 +7499,28 @@ class RiskManagementSystem {
                     const mitigationReduction = Math.min(Math.max(coefficient, 0), 1);
                     const referenceScore = level.reference * (1 - mitigationReduction);
                     cell.classList.add(getSeverityClass(referenceScore));
+
+                    const levelBounds = brutBounds[level.value] || { min: 0, max: 16 };
+                    const netMin = levelBounds.min * (1 - mitigationReduction);
+                    const netMax = levelBounds.max * (1 - mitigationReduction);
+                    cell.dataset.netMin = String(netMin);
+                    cell.dataset.netMax = String(netMax);
+
+                    const subGrid = document.createElement('div');
+                    subGrid.className = 'matrix-net-subgrid';
+                    severityThresholds.forEach((threshold) => {
+                        const subCell = document.createElement('div');
+                        const overlapMin = Math.max(netMin, threshold.min);
+                        const overlapMax = Math.min(netMax, threshold.max);
+                        const hasOverlap = overlapMax > overlapMin;
+                        const severityClass = severityClassMap[threshold.key] || 'level-1';
+                        subCell.className = `matrix-net-subcell ${severityClass}${hasOverlap ? '' : ' muted'}`;
+                        if (hasOverlap) {
+                            subCell.title = `${threshold.key} (${overlapMin.toFixed(2)} - ${overlapMax.toFixed(2)})`;
+                        }
+                        subGrid.appendChild(subCell);
+                    });
+                    cell.appendChild(subGrid);
                     netGrid.appendChild(cell);
                 });
             });
@@ -7528,6 +7564,12 @@ class RiskManagementSystem {
             ? [...MITIGATION_EFFECTIVENESS_ORDER]
             : ['inefficace', 'insuffisant', 'ameliorable', 'efficace'];
         const brutLevelsOrder = ['critique', 'fort', 'modere', 'faible'];
+        const brutBounds = {
+            critique: { min: 12, max: 16 },
+            fort: { min: 6, max: 12 },
+            modere: { min: 3, max: 6 },
+            faible: { min: 0, max: 3 }
+        };
         const severityLabelMap = {
             critique: 'Critical Risk',
             fort: 'High Risk',
@@ -7586,10 +7628,25 @@ class RiskManagementSystem {
                         return;
                     }
 
-                    const leftPercent = ((colIndex + 0.5) / mitigationOrder.length) * 100;
-                    const bottomPercent = ((brutLevelsOrder.length - rowIndex - 0.5) / brutLevelsOrder.length) * 100;
+                    const totalCols = mitigationOrder.length || 1;
+                    const totalRows = brutLevelsOrder.length || 1;
+                    const cellWidth = 100 / totalCols;
+                    const cellHeight = 100 / totalRows;
+                    const cellLeft = (colIndex * cellWidth);
+                    const cellBottom = ((totalRows - rowIndex - 1) * cellHeight);
 
-                    const key = `${colIndex}-${rowIndex}`;
+                    const rowBounds = brutBounds[brutLevel] || { min: 0, max: 16 };
+                    const mitigationReduction = Math.min(Math.max(Number(netInfo.coefficient) || 0, 0), 1);
+                    const netMin = rowBounds.min * (1 - mitigationReduction);
+                    const netMax = rowBounds.max * (1 - mitigationReduction);
+                    const scoreRange = Math.max(netMax - netMin, 0.0001);
+                    const scoreRatio = Math.min(1, Math.max(0, ((Number(netInfo.score) || 0) - netMin) / scoreRange));
+
+                    const leftPercent = cellLeft + (cellWidth / 2);
+                    const bottomPercent = cellBottom + (scoreRatio * cellHeight);
+
+                    const scoreSlot = Math.round(scoreRatio * 4);
+                    const key = `${colIndex}-${rowIndex}-${scoreSlot}`;
                     const index = cellCounts[key] || 0;
                     cellCounts[key] = index + 1;
                     const slots = cellCounts[key];
