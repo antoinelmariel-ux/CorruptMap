@@ -291,10 +291,10 @@ window.formatCoefficient = formatCoefficient;
 window.getFormAggravatingSelection = getFormAggravatingSelection;
 
 const MITIGATION_EFFECTIVENESS_ORDER = Object.freeze([
-    'inefficace',
-    'insuffisant',
+    'efficace',
     'ameliorable',
-    'efficace'
+    'insuffisant',
+    'inefficace'
 ]);
 
 const MITIGATION_EFFECTIVENESS_SCALE = Object.freeze({
@@ -412,8 +412,8 @@ function getRiskNetScore(risk) {
     const brutScore = typeof getRiskBrutScore === 'function'
         ? getRiskBrutScore(risk)
         : (Number(risk?.probBrut) || 0) * (Number(risk?.impactBrut) || 0) * aggravatingCoefficient;
-    const mitigationReduction = clampMitigationReduction(getRiskMitigationCoefficient(risk));
-    return brutScore * (1 - mitigationReduction);
+    const mitigationMastery = clampMitigationReduction(getRiskMitigationCoefficient(risk));
+    return brutScore * mitigationMastery;
 }
 
 function getRiskSeverityFromScore(score) {
@@ -444,7 +444,7 @@ function getRiskNetInfo(risk) {
         ? aggravatingCoefficient
         : 1;
     const baseBrutScore = brutScore / safeAggravatingCoefficient;
-    const score = brutScore * (1 - mitigationCoefficient);
+    const score = brutScore * mitigationCoefficient;
     const level = getRiskSeverityFromScore(score);
     const effectiveness = getRiskMitigationEffectiveness(risk);
     const label = MITIGATION_EFFECTIVENESS_SCALE[effectiveness]?.label || effectiveness;
