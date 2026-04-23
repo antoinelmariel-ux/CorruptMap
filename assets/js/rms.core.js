@@ -8071,7 +8071,7 @@ class RiskManagementSystem {
                 const metaDetails = `Processus: ${processOrSubProcess} • Tiers: ${tiersLabel || 'Not defined'} • Type: ${typeLabel}`;
 
                 return `
-                    <div class="risk-item" data-risk-id="${risk.id}" onclick="rms.selectRisk(${JSON.stringify(risk.id)})">
+                    <div class="risk-item" data-risk-id="${risk.id}" onclick='rms.selectRisk(${JSON.stringify(risk.id)})'>
                         <div class="risk-item-header">
                             <span class="risk-item-title">${risk.description}</span>
                             <div class="risk-item-actions">
@@ -8081,7 +8081,7 @@ class RiskManagementSystem {
                                     class="risk-item-edit-btn"
                                     title="Éditer le risque"
                                     aria-label="Éditer le risque ${risk.description}"
-                                    onclick="event.stopPropagation(); rms.editRisk(${JSON.stringify(risk.id)})"
+                                    onclick='event.stopPropagation(); rms.editRisk(${JSON.stringify(risk.id)})'
                                 >✏️</button>
                             </div>
                         </div>
@@ -8963,8 +8963,8 @@ class RiskManagementSystem {
                             <td><span class="table-badge ${badgeClass}">${risk.level}</span></td>
                             <td class="table-actions-cell">
                                 <div class="table-actions">
-                                    <button class="action-btn" onclick="rms.selectRisk(${JSON.stringify(risk.id)})">👁️</button>
-                                    <button class="action-btn" onclick="rms.editRisk(${JSON.stringify(risk.id)})">✏️</button>
+                                    <button class="action-btn" onclick='rms.selectRisk(${JSON.stringify(risk.id)})'>👁️</button>
+                                    <button class="action-btn" onclick='rms.editRisk(${JSON.stringify(risk.id)})'>✏️</button>
                                 </div>
                             </td>
                         </tr>
@@ -9488,9 +9488,9 @@ class RiskManagementSystem {
                     <td><span class="table-badge badge-${riskBadgeClass}">${riskStatusLabel || 'Not defined'}</span></td>
                     <td class="table-actions-cell">
                         <div class="table-actions">
-                            <button class="action-btn" title="Dupliquer" onclick="rms.duplicateRisk(${JSON.stringify(risk.id)})">📄</button>
-                            <button class="action-btn" onclick="rms.editRisk(${JSON.stringify(risk.id)})">✏️</button>
-                            <button class="action-btn" onclick="rms.deleteRisk(${JSON.stringify(risk.id)})">🗑️</button>
+                            <button class="action-btn" title="Dupliquer" onclick='rms.duplicateRisk(${JSON.stringify(risk.id)})'>📄</button>
+                            <button class="action-btn" onclick='rms.editRisk(${JSON.stringify(risk.id)})'>✏️</button>
+                            <button class="action-btn" onclick='rms.deleteRisk(${JSON.stringify(risk.id)})'>🗑️</button>
                         </div>
                     </td>
                 </tr>
@@ -11640,10 +11640,10 @@ class RiskManagementSystem {
                     <footer class="interview-card-footer">
                         <div class="interview-card-meta">Last updated: ${escapeHtml(updatedLabel || 'Unknown date')}</div>
                         <div class="interview-card-actions">
-                            <button class="interview-action-btn view" onclick="rms.openInterviewViewer(${idAttribute})">View</button>
-                            <button class="interview-action-btn edit" onclick="rms.openInterviewModal(${idAttribute})">Edit</button>
-                            <button class="interview-action-btn download" onclick="rms.downloadInterviewFile(${idAttribute})">Export</button>
-                            <button class="interview-action-btn delete" onclick="rms.deleteInterview(${idAttribute})">Delete</button>
+                            <button class="interview-action-btn view" onclick='rms.openInterviewViewer(${idAttribute})'>View</button>
+                            <button class="interview-action-btn edit" onclick='rms.openInterviewModal(${idAttribute})'>Edit</button>
+                            <button class="interview-action-btn download" onclick='rms.downloadInterviewFile(${idAttribute})'>Export</button>
+                            <button class="interview-action-btn delete" onclick='rms.deleteInterview(${idAttribute})'>Delete</button>
                         </div>
                     </footer>
                 </article>

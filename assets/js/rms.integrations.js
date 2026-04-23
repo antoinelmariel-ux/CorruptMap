@@ -3268,7 +3268,7 @@ function applyPatch() {
           return `
             <div class="risk-list-item">
               <input type="checkbox" id="risk-${risk.id}" ${isSelected ? 'checked' : ''}
-                     onchange="toggleRiskSelection(${JSON.stringify(risk.id)})">
+                     onchange='toggleRiskSelection(${JSON.stringify(risk.id)})'>
               <div class="risk-item-info">
                 <div class="risk-item-title">#${risk.id} - ${title}</div>
                 <div class="risk-item-meta">
