@@ -8538,6 +8538,27 @@ class RiskManagementSystem {
             }).join(' ; ');
         };
 
+        const formatDetectivePreventiveSplit = (distribution, total) => {
+            if (!total || !Array.isArray(distribution) || distribution.length === 0) {
+                return 'No active control';
+            }
+
+            const findCount = (needle) => distribution
+                .filter(item => {
+                    const value = String(item?.value || '').toLowerCase();
+                    const label = String(item?.label || '').toLowerCase();
+                    return value === needle || label === needle;
+                })
+                .reduce((sum, item) => sum + (Number(item?.count) || 0), 0);
+
+            const detectiveCount = findCount('detective');
+            const preventiveCount = findCount('preventive');
+            const detectivePct = Math.round((detectiveCount / total) * 100);
+            const preventivePct = Math.round((preventiveCount / total) * 100);
+
+            return `${detectivePct}% Detective vs ${preventivePct}% Preventive`;
+        };
+
         const formatControlEffectivenessDistribution = (distribution) => {
             if (!Array.isArray(distribution) || distribution.length === 0) {
                 return 'No active control';
@@ -8597,7 +8618,7 @@ class RiskManagementSystem {
 
             const delta = activeControls - previousActiveControls;
             const changeEl = card.querySelector('.stat-change');
-            const distributionLabel = formatControlEffectivenessDistribution(controlEffectivenessDistribution);
+            const distributionLabel = formatDetectivePreventiveSplit(controlTypeDistribution, activeControls);
             applyTrend(changeEl, delta, {
                 inverted: false,
                 stableLabel: () => distributionLabel,
