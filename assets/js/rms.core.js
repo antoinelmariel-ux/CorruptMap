@@ -142,6 +142,10 @@ class RiskManagementSystem {
             search: '',
             entity: []
         };
+        this.riskRegisterSort = {
+            key: '',
+            direction: 'desc'
+        };
         this.controlFilters = {
             type: '',
             origin: '',
@@ -3541,8 +3545,8 @@ class RiskManagementSystem {
         }
     }
 
-    renderMatrixEntityFilterChips() {
-        const container = document.getElementById('matrixEntityFilterChips');
+    renderRiskEntityFilterChips(containerId = 'matrixEntityFilterChips') {
+        const container = document.getElementById(containerId);
         if (!container) {
             return;
         }
@@ -3569,6 +3573,44 @@ class RiskManagementSystem {
                 }
             });
             container.appendChild(chip);
+        });
+    }
+
+    renderMatrixEntityFilterChips() {
+        this.renderRiskEntityFilterChips('matrixEntityFilterChips');
+        this.renderRiskEntityFilterChips('risksEntityFilterChips');
+    }
+
+    setRiskRegisterSort(sortKey) {
+        const allowedKeys = new Set(['gross', 'aggravated', 'net']);
+        if (!allowedKeys.has(sortKey)) {
+            return;
+        }
+
+        if (!this.riskRegisterSort || this.riskRegisterSort.key !== sortKey) {
+            this.riskRegisterSort = { key: sortKey, direction: 'desc' };
+        } else {
+            this.riskRegisterSort.direction = this.riskRegisterSort.direction === 'desc' ? 'asc' : 'desc';
+        }
+
+        this.updateRisksList();
+    }
+
+    updateRiskRegisterSortIndicators() {
+        const sortState = this.riskRegisterSort || { key: '', direction: 'desc' };
+        const allKeys = ['gross', 'aggravated', 'net'];
+        allKeys.forEach((key) => {
+            const arrow = document.getElementById(`riskSortArrow-${key}`);
+            if (!arrow) {
+                return;
+            }
+            if (sortState.key !== key) {
+                arrow.textContent = '↕';
+                arrow.classList.remove('active');
+                return;
+            }
+            arrow.textContent = sortState.direction === 'asc' ? '↑' : '↓';
+            arrow.classList.add('active');
         });
     }
 
@@ -9345,31 +9387,48 @@ class RiskManagementSystem {
         if (!allRisks.length) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="10" class="table-empty">No risk recorded</td>
+                    <td colspan="11" class="table-empty">No risk recorded</td>
                 </tr>
             `;
+            this.updateRiskRegisterSortIndicators();
             return;
         }
 
         if (!filteredRisks.length) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="10" class="table-empty">No risk matches the filters</td>
+                    <td colspan="11" class="table-empty">No risk matches the filters</td>
                 </tr>
             `;
+            this.updateRiskRegisterSortIndicators();
             return;
         }
 
-        tbody.innerHTML = filteredRisks.map(risk => {
+        const actionPlanList = Array.isArray(this.actionPlans) ? this.actionPlans : [];
+        const actionPlanIndex = actionPlanList.reduce((acc, plan) => {
+            if (!plan || plan.id == null) {
+                return acc;
+            }
+            acc[String(plan.id)] = plan;
+            return acc;
+        }, {});
+
+        const rows = filteredRisks.map(risk => {
+            const normalizedBrut = (Number(risk?.probBrut) || 0) * (Number(risk?.impactBrut) || 0);
             const brutScore = typeof getRiskBrutScore === 'function'
                 ? getRiskBrutScore(risk)
-                : (Number(risk?.probBrut) || 0) * (Number(risk?.impactBrut) || 0);
+                : normalizedBrut;
             const netInfo = typeof getRiskNetInfo === 'function'
                 ? getRiskNetInfo(risk)
                 : { score: (Number(risk?.probNet) || 0) * (Number(risk?.impactNet) || 0), coefficient: 0, reduction: 0, label: '' };
+            const grossScore = Number.isFinite(netInfo.baseBrutScore) ? netInfo.baseBrutScore : normalizedBrut;
+            const aggravatedScore = Number.isFinite(netInfo.brutScore) ? netInfo.brutScore : brutScore;
             const netScore = netInfo.score;
-            const brutLabel = Number.isFinite(brutScore)
-                ? brutScore.toLocaleString('fr-FR', { maximumFractionDigits: 2 })
+            const grossLabel = Number.isFinite(grossScore)
+                ? grossScore.toLocaleString('fr-FR', { maximumFractionDigits: 2 })
+                : '0';
+            const aggravatedLabel = Number.isFinite(aggravatedScore)
+                ? aggravatedScore.toLocaleString('fr-FR', { maximumFractionDigits: 2 })
                 : '0';
             const netLabel = Number.isFinite(netScore)
                 ? netScore.toLocaleString('fr-FR', { maximumFractionDigits: 2 })
@@ -9395,17 +9454,37 @@ class RiskManagementSystem {
             const riskBadgeClass = riskStatusValue === 'validé'
                 ? 'success'
                 : (riskStatusValue === 'archive' ? 'danger' : 'warning');
+            const processLabel = this.getProcessLabel(risk.processus) || '';
+            const subProcessLabel = this.getSubProcessLabel(risk.processus, risk.sousProcessus) || '';
+            const processOrSubProcess = subProcessLabel || processLabel;
+            const actionPlanRefs = Array.isArray(risk?.actionPlans) ? risk.actionPlans : [];
+            const actionPlanNames = actionPlanRefs.map(ref => {
+                if (ref && typeof ref === 'object') {
+                    return ref.name || ref.title || ref.id || '';
+                }
+                const indexed = actionPlanIndex[String(ref)];
+                return indexed?.name || indexed?.title || ref || '';
+            }).filter(Boolean);
+            const actionPlansLabel = actionPlanNames.length
+                ? actionPlanNames.join(', ')
+                : '—';
 
-            return `
+            return {
+                risk,
+                grossScore: Number(grossScore) || 0,
+                aggravatedScore: Number(aggravatedScore) || 0,
+                netScore: Number(netScore) || 0,
+                html: `
                 <tr>
                     <td>#${risk.id}</td>
                     <td>${risk.description}</td>
-                    <td>${this.getProcessLabel(risk.processus)}</td>
-                    <td>${this.getSubProcessLabel(risk.processus, risk.sousProcessus) || ''}</td>
+                    <td>${processOrSubProcess}</td>
                     <td>${typeLabel}</td>
                     <td>${tierLabels.join(', ')}</td>
-                    <td>${brutLabel}</td>
+                    <td>${grossLabel}</td>
+                    <td>${aggravatedLabel}</td>
                     <td title="Reduction ${reductionLabel}${effectivenessLabel}">${netLabel}</td>
+                    <td title="${actionPlansLabel}">${actionPlansLabel}</td>
                     <td><span class="table-badge badge-${riskBadgeClass}">${riskStatusLabel || 'Not defined'}</span></td>
                     <td class="table-actions-cell">
                         <div class="table-actions">
@@ -9415,8 +9494,20 @@ class RiskManagementSystem {
                         </div>
                     </td>
                 </tr>
-            `;
-        }).join('');
+            `
+            };
+        });
+
+        const sortState = this.riskRegisterSort || { key: '', direction: 'desc' };
+        const sortedRows = rows.slice();
+        if (sortState.key) {
+            const scoreKey = `${sortState.key}Score`;
+            const multiplier = sortState.direction === 'asc' ? 1 : -1;
+            sortedRows.sort((a, b) => (a[scoreKey] - b[scoreKey]) * multiplier);
+        }
+
+        tbody.innerHTML = sortedRows.map(entry => entry.html).join('');
+        this.updateRiskRegisterSortIndicators();
     }
 
     // Controls functions

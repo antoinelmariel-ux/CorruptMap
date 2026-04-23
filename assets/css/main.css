@@ -2197,6 +2197,22 @@ tbody tr:hover {
     transform: translateY(-2px);
 }
 
+#risksTable .sortable-header {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+
+#risksTable .sortable-header .sort-arrow {
+    font-size: 0.8em;
+    color: var(--muted-text-color);
+    margin-left: 4px;
+}
+
+#risksTable .sortable-header .sort-arrow.active {
+    color: var(--primary-color);
+}
+
 /* Modal amélioré */
 .modal {
     display: none;
