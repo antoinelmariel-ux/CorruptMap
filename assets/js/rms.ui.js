@@ -1078,6 +1078,7 @@ function addNewRisk() {
 
             document.getElementById('description').value = lastRiskData.description || '';
             document.getElementById('example').value = lastRiskData.example || '';
+            document.getElementById('comment').value = lastRiskData.comment || '';
             document.getElementById('probBrut').value = lastRiskData.probBrut || 1;
             document.getElementById('impactBrut').value = lastRiskData.impactBrut || 1;
             const mitigationInput = document.getElementById('mitigationEffectiveness');
@@ -1126,6 +1127,7 @@ function addNewRisk() {
             if (impactNetInput) {
                 impactNetInput.value = impactNetInput.value || 1;
             }
+            document.getElementById('comment').value = '';
         }
         renderAllRiskMultiSelectChips();
 
@@ -1211,6 +1213,7 @@ function saveRisk() {
         sousProcessusAssocies,
         description: document.getElementById('description').value,
         example: document.getElementById('example').value,
+        comment: document.getElementById('comment').value,
         typeCorruption: typesCorruption[0] || '',
         typesCorruption,
         statut: document.getElementById('statut').value,
@@ -1234,14 +1237,6 @@ function saveRisk() {
 
     formData.probPost = formData.probNet;
     formData.impactPost = formData.impactNet;
-
-    const isIncompleteRisk = !formData.processusAssocies.length
-        || !formData.description
-        || !formData.typesCorruption.length
-        || !formData.statut;
-    if (isIncompleteRisk) {
-        formData.statut = 'brouillon';
-    }
 
     if (currentEditingRiskId) {
         const targetId = String(currentEditingRiskId);
@@ -1278,11 +1273,7 @@ function saveRisk() {
             rms.saveData();
             rms.init();
             closeModal('riskModal');
-            if (isIncompleteRisk) {
-                showNotification('info', 'Incomplete risk saved as draft');
-            } else {
-                showNotification('success', 'Risk updated successfully!');
-            }
+            showNotification('success', 'Risk updated successfully!');
             currentEditingRiskId = null;
         }
     } else {
@@ -1311,11 +1302,7 @@ function saveRisk() {
         rms.saveData();
         rms.renderAll();
         closeModal('riskModal');
-        if (isIncompleteRisk) {
-            showNotification('info', 'Incomplete risk saved as draft');
-        } else {
-            showNotification('success', 'Risk added successfully!');
-        }
+        showNotification('success', 'Risk added successfully!');
     }
 
     if (rms) {

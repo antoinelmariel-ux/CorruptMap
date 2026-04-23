@@ -378,7 +378,8 @@ class RiskManagementSystem {
                 { value: 'brouillon', label: 'Draft' },
                 { value: 'a-valider', label: 'To validate' },
                 { value: 'validé', label: 'Validated' },
-                { value: 'archive', label: 'Archived' }
+                { value: 'archive', label: 'Archived' },
+                { value: 'not-included', label: 'Not included' }
             ];
         }
 
@@ -986,7 +987,8 @@ class RiskManagementSystem {
                 brouillon: ['draft'],
                 'a-valider': ['a-valider', 'a valider', 'to-validate', 'to validate'],
                 'validé': ['valide', 'validee', 'validé', 'valida', 'validate', 'validated'],
-                archive: ['archive', 'archived']
+                archive: ['archive', 'archived'],
+                'not-included': ['not included', 'non included', 'non-included', 'not-included', 'na', 'n/a']
             },
             control: {
                 actif: ['active'],
@@ -3582,7 +3584,7 @@ class RiskManagementSystem {
     }
 
     setRiskRegisterSort(sortKey) {
-        const allowedKeys = new Set(['gross', 'aggravated', 'net']);
+        const allowedKeys = new Set(['id', 'gross', 'aggravated', 'net']);
         if (!allowedKeys.has(sortKey)) {
             return;
         }
@@ -3598,7 +3600,7 @@ class RiskManagementSystem {
 
     updateRiskRegisterSortIndicators() {
         const sortState = this.riskRegisterSort || { key: '', direction: 'desc' };
-        const allKeys = ['gross', 'aggravated', 'net'];
+        const allKeys = ['id', 'gross', 'aggravated', 'net'];
         allKeys.forEach((key) => {
             const arrow = document.getElementById(`riskSortArrow-${key}`);
             if (!arrow) {
@@ -7784,7 +7786,12 @@ class RiskManagementSystem {
 
             if (searchFilter) {
                 const description = risk?.description != null ? String(risk.description).toLowerCase() : '';
-                if (!description.includes(searchFilter)) {
+                const idValue = risk?.id != null ? String(risk.id).toLowerCase() : '';
+                const tiersValues = Array.isArray(risk?.tiers)
+                    ? risk.tiers.map(value => String(value || '').toLowerCase()).filter(Boolean)
+                    : [];
+                const tiersText = tiersValues.join(' ');
+                if (!description.includes(searchFilter) && !idValue.includes(searchFilter) && !tiersText.includes(searchFilter)) {
                     return false;
                 }
             }
@@ -9399,18 +9406,30 @@ class RiskManagementSystem {
             const netInfo = typeof getRiskNetInfo === 'function'
                 ? getRiskNetInfo(risk)
                 : { score: (Number(risk?.probNet) || 0) * (Number(risk?.impactNet) || 0), coefficient: 0, reduction: 0, label: '' };
-            const grossScore = Number.isFinite(netInfo.baseBrutScore) ? netInfo.baseBrutScore : normalizedBrut;
-            const aggravatedScore = Number.isFinite(netInfo.brutScore) ? netInfo.brutScore : brutScore;
-            const netScore = netInfo.score;
+            const riskStatusValue = this.normalizeStatusValue(
+                'risk',
+                risk?.statut,
+                risk?.status,
+                risk?.statusLabel,
+                risk?.state
+            );
+            const isNotIncluded = riskStatusValue === 'not-included';
+            const grossScore = isNotIncluded
+                ? null
+                : (Number.isFinite(netInfo.baseBrutScore) ? netInfo.baseBrutScore : normalizedBrut);
+            const aggravatedScore = isNotIncluded
+                ? null
+                : (Number.isFinite(netInfo.brutScore) ? netInfo.brutScore : brutScore);
+            const netScore = isNotIncluded ? null : netInfo.score;
             const grossLabel = Number.isFinite(grossScore)
                 ? grossScore.toLocaleString('fr-FR', { maximumFractionDigits: 2 })
-                : '0';
+                : 'N/A';
             const aggravatedLabel = Number.isFinite(aggravatedScore)
                 ? aggravatedScore.toLocaleString('fr-FR', { maximumFractionDigits: 2 })
-                : '0';
+                : 'N/A';
             const netLabel = Number.isFinite(netScore)
                 ? netScore.toLocaleString('fr-FR', { maximumFractionDigits: 2 })
-                : '0';
+                : 'N/A';
             const reductionPercent = Number.isFinite(netInfo.reduction)
                 ? netInfo.reduction
                 : Math.round((netInfo.coefficient || 0) * 100);
@@ -9421,13 +9440,6 @@ class RiskManagementSystem {
             const tierLabels = Array.isArray(risk.tiers)
                 ? risk.tiers.map(tier => resolveLabel(tierMap, tier))
                 : [];
-            const riskStatusValue = this.normalizeStatusValue(
-                'risk',
-                risk?.statut,
-                risk?.status,
-                risk?.statusLabel,
-                risk?.state
-            );
             const riskStatusLabel = this.getStatusLabel('risk', riskStatusValue, risk?.statusLabel, risk?.status, risk?.statut);
             const riskBadgeClass = riskStatusValue === 'validé'
                 ? 'success'
@@ -9449,9 +9461,10 @@ class RiskManagementSystem {
 
             return {
                 risk,
-                grossScore: Number(grossScore) || 0,
-                aggravatedScore: Number(aggravatedScore) || 0,
-                netScore: Number(netScore) || 0,
+                idScore: Number(risk?.id) || 0,
+                grossScore: Number.isFinite(grossScore) ? Number(grossScore) : null,
+                aggravatedScore: Number.isFinite(aggravatedScore) ? Number(aggravatedScore) : null,
+                netScore: Number.isFinite(netScore) ? Number(netScore) : null,
                 html: `
                 <tr>
                     <td>#${risk.id}</td>
@@ -9481,7 +9494,20 @@ class RiskManagementSystem {
         if (sortState.key) {
             const scoreKey = `${sortState.key}Score`;
             const multiplier = sortState.direction === 'asc' ? 1 : -1;
-            sortedRows.sort((a, b) => (a[scoreKey] - b[scoreKey]) * multiplier);
+            sortedRows.sort((a, b) => {
+                const aValue = a[scoreKey];
+                const bValue = b[scoreKey];
+                if (aValue == null && bValue == null) {
+                    return 0;
+                }
+                if (aValue == null) {
+                    return 1;
+                }
+                if (bValue == null) {
+                    return -1;
+                }
+                return (aValue - bValue) * multiplier;
+            });
         }
 
         tbody.innerHTML = sortedRows.map(entry => entry.html).join('');
@@ -11754,6 +11780,7 @@ class RiskManagementSystem {
 
             document.getElementById('description').value = risk.description || '';
             document.getElementById('example').value = risk.example || '';
+            document.getElementById('comment').value = risk.comment || '';
             document.getElementById('probBrut').value = risk.probBrut;
             document.getElementById('impactBrut').value = risk.impactBrut;
             const probNetInput = document.getElementById('probNet');
