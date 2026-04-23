@@ -18,13 +18,13 @@ function updateNetSeverityBadge(impactValue) {
         : (numericImpact >= 4 ? 'critique' : numericImpact === 3 ? 'fort' : numericImpact === 2 ? 'modere' : 'faible');
 
     const severityLabels = {
-        critique: 'Critique',
-        fort: 'Fort',
-        modere: 'Modéré',
-        faible: 'Faible'
+        critique: 'Critical',
+        fort: 'High',
+        modere: 'Moderate',
+        faible: 'Low'
     };
 
-    badge.textContent = `Risque net ${severityLabels[severity] || ''}`;
+    badge.textContent = `Net risk ${severityLabels[severity] || ''}`;
     if (severity) {
         badge.dataset.severity = severity;
     } else {
@@ -40,10 +40,10 @@ function ensureNetMitigationOptions() {
     netMitigationOptions = typeof getMitigationEffectivenessOptions === 'function'
         ? getMitigationEffectivenessOptions()
         : [
-            { value: 'inefficace', label: 'Inefficace', coefficient: 0 },
-            { value: 'insuffisant', label: 'Insuffisant', coefficient: 0.25 },
-            { value: 'ameliorable', label: 'Améliorable', coefficient: 0.5 },
-            { value: 'efficace', label: 'Efficace', coefficient: 0.75 }
+            { value: 'inefficace', label: 'Ineffective', coefficient: 0 },
+            { value: 'insuffisant', label: 'Insufficient', coefficient: 0.25 },
+            { value: 'ameliorable', label: 'Room for improvement', coefficient: 0.5 },
+            { value: 'efficace', label: 'Effective', coefficient: 0.75 }
         ];
 
     return netMitigationOptions;
@@ -79,7 +79,7 @@ function updateNetSliderUI(probValue) {
         const percentLabel = document.getElementById('netMitigationPercentLabel');
         if (percentLabel) {
             const percent = Math.round((Number(option.coefficient) || 0) * 100);
-            percentLabel.textContent = `Réduction ${percent}%`;
+            percentLabel.textContent = `Reduction ${percent}%`;
         }
     }
 
@@ -132,8 +132,8 @@ function initNetMitigationSlider() {
         button.type = 'button';
         button.className = 'net-slider-mark-button';
         const label = option.label || option.value;
-        button.innerHTML = `<span>${label}</span><span class="net-slider-mark-sub">Réduction ${percent}%</span>`;
-        button.setAttribute('aria-label', `${label} – réduction ${percent}%`);
+        button.innerHTML = `<span>${label}</span><span class="net-slider-mark-sub">Reduction ${percent}%</span>`;
+        button.setAttribute('aria-label', `${label} – reduction ${percent}%`);
         button.setAttribute('aria-pressed', 'false');
         const targetValue = index + 1;
         button.addEventListener('click', () => applySliderValue(targetValue));
@@ -326,7 +326,7 @@ function calculateScore(type) {
             const reductionLabel = typeof formatMitigationCoefficient === 'function'
                 ? formatMitigationCoefficient(coefficient)
                 : `${Math.round(coefficient * 100)}%`;
-            coordElement.textContent = `Brut ${brutLabel} × Réduction ${reductionLabel}`;
+            coordElement.textContent = `Gross ${brutLabel} × Reduction ${reductionLabel}`;
         } else {
             coordElement.textContent = `P${prob} × I${impact}`;
         }
