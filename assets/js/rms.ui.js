@@ -1709,6 +1709,7 @@ function addNewActionPlan() {
             document.getElementById('planDueDate').value = lastActionPlanData.dueDate || '';
             document.getElementById('planStatus').value = lastActionPlanData.status || '';
             document.getElementById('planDescription').value = lastActionPlanData.description || '';
+            document.getElementById('planComment').value = lastActionPlanData.comment || '';
             selectedRisksForPlan = [...(lastActionPlanData.risks || [])];
         }
         const contextRiskId = (actionPlanCreationContext && actionPlanCreationContext.riskId != null)
@@ -1739,6 +1740,7 @@ function editActionPlan(planId) {
         document.getElementById('planDueDate').value = plan.dueDate || '';
         document.getElementById('planStatus').value = plan.status || '';
         document.getElementById('planDescription').value = plan.description || '';
+        document.getElementById('planComment').value = plan.comment || '';
         selectedRisksForPlan = plan.risks ? [...plan.risks] : [];
         updateSelectedRisksForPlanDisplay();
     }
@@ -1786,6 +1788,7 @@ function saveActionPlan() {
         dueDate: formData.get('dueDate'),
         status: formData.get('status'),
         description: formData.get('description').trim(),
+        comment: String(formData.get('comment') || '').trim(),
         risks: [...selectedRisksForPlan]
     };
     const isDraftPlan = !planData.title;

@@ -506,6 +506,8 @@ class RiskManagementSystem {
                 { value: 'brouillon', label: 'Draft' },
                 { value: 'a-demarrer', label: 'To start' },
                 { value: 'en-cours', label: 'In progress' },
+                { value: 'delayed', label: 'Delayed' },
+                { value: 'abandoned', label: 'Abandoned' },
                 { value: 'termine', label: 'Completed' }
             ];
 
@@ -998,6 +1000,8 @@ class RiskManagementSystem {
                 brouillon: ['draft'],
                 'a-demarrer': ['a demarrer', 'to-start', 'to start'],
                 'en-cours': ['en cours', 'in-progress', 'in progress'],
+                delayed: ['retarde', 'en-retard', 'delay', 'delayed'],
+                abandoned: ['abandonne', 'abandoned', 'cancelled', 'canceled'],
                 termine: ['termine', 'terminee', 'completed']
             }
         };
@@ -8231,7 +8235,8 @@ class RiskManagementSystem {
         }
 
         const actionPlans = Array.isArray(this.actionPlans) ? this.actionPlans : [];
-        const totalActionPlans = actionPlans.length;
+        const dashboardActionPlans = actionPlans.filter(plan => this.normalizeStatusValue('actionPlan', plan?.status, plan?.statut, plan?.statusLabel) !== 'abandoned');
+        const totalActionPlans = dashboardActionPlans.length;
 
         const statusOptions = Array.isArray(this.config?.actionPlanStatuses)
             ? this.config.actionPlanStatuses.filter(option => option && option.value !== undefined && option.value !== null)
@@ -8243,7 +8248,7 @@ class RiskManagementSystem {
             return acc;
         }, {});
 
-        const statusCounts = actionPlans.reduce((acc, plan) => {
+        const statusCounts = dashboardActionPlans.reduce((acc, plan) => {
             const rawStatus = plan?.status ?? plan?.statut ?? plan?.statusLabel ?? '';
             const rawString = rawStatus != null ? String(rawStatus).trim() : '';
             const normalizedStatus = this.normalizeStatusValue('actionPlan', rawStatus);
@@ -8838,7 +8843,9 @@ class RiskManagementSystem {
                     return null;
                 }
 
-                const associatedPlans = collectPlansForRisk(risk);
+                const associatedPlans = collectPlansForRisk(risk).filter(
+                    plan => this.normalizeStatusValue('actionPlan', plan?.status, plan?.statut, plan?.statusLabel) !== 'abandoned'
+                );
                 const hasPlans = associatedPlans.length > 0;
                 const hasDraftPlan = associatedPlans.some(
                     plan => this.normalizeStatusValue('actionPlan', plan?.status, plan?.statut, plan?.statusLabel) === 'brouillon'
@@ -8877,6 +8884,7 @@ class RiskManagementSystem {
         const todayTime = today.getTime();
 
         const overdueActionPlans = (Array.isArray(this.actionPlans) ? this.actionPlans : [])
+            .filter(plan => this.normalizeStatusValue('actionPlan', plan?.status, plan?.statut, plan?.statusLabel) !== 'abandoned')
             .map(plan => {
                 const dueDate = parsePlanDueDate(plan?.dueDate);
                 const statusValue = this.normalizeStatusValue('actionPlan', plan?.status, plan?.statut, plan?.statusLabel);
