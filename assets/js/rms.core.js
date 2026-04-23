@@ -7468,33 +7468,14 @@ class RiskManagementSystem {
                 { min: 12, max: Infinity, className: 'level-4' }
             ];
 
-            const levelColorMap = {
-                'level-1': 'rgba(46, 204, 113, 0.45)',
-                'level-2': 'rgba(241, 196, 15, 0.5)',
-                'level-3': 'rgba(230, 126, 34, 0.55)',
-                'level-4': 'rgba(231, 76, 60, 0.6)'
-            };
-
             const getSeverityClassFromScore = (score) => {
                 const value = Number.isFinite(score) ? score : 0;
                 const match = severityStops.find(stop => value >= stop.min && value < stop.max);
                 return match?.className || 'level-1';
             };
 
-            const getCoefficientBounds = (index) => {
-                const current = Number(mitigationOptions[index]?.coefficient) || 0;
-                const previous = Number(mitigationOptions[index - 1]?.coefficient);
-                const next = Number(mitigationOptions[index + 1]?.coefficient);
-                const lower = Number.isFinite(previous) ? (previous + current) / 2 : 0;
-                const upper = Number.isFinite(next) ? (next + current) / 2 : 1;
-                return {
-                    lower: Math.max(0, Math.min(1, lower)),
-                    upper: Math.max(0, Math.min(1, upper))
-                };
-            };
-
             brutLevels.forEach(level => {
-                mitigationOptions.forEach((option, optionIndex) => {
+                mitigationOptions.forEach((option) => {
                     const cell = document.createElement('div');
                     cell.className = 'matrix-cell';
                     cell.dataset.brutLevel = level.value;
@@ -7510,28 +7491,9 @@ class RiskManagementSystem {
                     const primaryLevel = getSeverityClassFromScore(representativeScore);
                     cell.classList.add(primaryLevel);
 
-                    const coefficientBounds = getCoefficientBounds(optionIndex);
-                    const coefficientRange = Math.max(0.01, coefficientBounds.upper - coefficientBounds.lower);
-                    const brutRange = Math.max(0.01, level.max - level.min);
-
-                    const sampleCoefficients = [0.25, 0.75].map(ratio => coefficientBounds.lower + (ratio * coefficientRange));
-                    const sampleBrutScores = [0.75, 0.25].map(ratio => level.min + (ratio * brutRange));
-
-                    const virtualColors = [];
-                    sampleBrutScores.forEach(brutSample => {
-                        sampleCoefficients.forEach(coeffSample => {
-                            const mitigation = Math.max(0, Math.min(1, coeffSample));
-                            const netSample = brutSample * (1 - mitigation);
-                            const severityClass = getSeverityClassFromScore(netSample);
-                            virtualColors.push(levelColorMap[severityClass] || levelColorMap['level-1']);
-                        });
-                    });
-
-                    const uniqueColors = new Set(virtualColors);
-                    if (uniqueColors.size > 1) {
-                        const [topLeft, topRight, bottomLeft, bottomRight] = virtualColors;
-                        cell.style.background = `conic-gradient(from 270deg at 50% 50%, ${topLeft} 0 25%, ${topRight} 25% 50%, ${bottomRight} 50% 75%, ${bottomLeft} 75% 100%)`;
-                    }
+                    // Conserve strictement 4 couleurs de niveaux de risque.
+                    // On ne mélange plus les teintes dans une même case.
+                    cell.style.background = '';
 
                     netGrid.appendChild(cell);
                 });
