@@ -76,7 +76,7 @@
     const state = {
         view: 'scenarios',
         data: {
-            version: '2.14.78',
+            version: '2.14.81',
             scenarios: [],
             selectedId: null
         }
