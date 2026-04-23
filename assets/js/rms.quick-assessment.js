@@ -76,7 +76,7 @@
     const state = {
         view: 'scenarios',
         data: {
-            version: '2.14.78',
+            version: '2.14.81',
             scenarios: [],
             selectedId: null
         }
@@ -540,6 +540,53 @@
         reader.readAsText(file);
     }
 
+    function convertOverviewScenariosToDraftRisks() {
+        const sorted = getSortedScenarios();
+        if (!sorted.length) {
+            alert('Aucun scénario évalué à basculer.');
+            return;
+        }
+
+        if (!window.rms || typeof window.rms.addRisk !== 'function') {
+            alert('Le registre des risques est indisponible pour le moment.');
+            return;
+        }
+
+        const createdRisks = [];
+        sorted.forEach((scenario) => {
+            const payload = {
+                description: scenario.text,
+                probBrut: clampMatrixValue(scenario.raw?.prob),
+                impactBrut: clampMatrixValue(scenario.raw?.impact),
+                probNet: clampMatrixValue(scenario.raw?.prob),
+                impactNet: clampMatrixValue(scenario.raw?.impact),
+                statut: 'brouillon',
+                commentaire: String(scenario.comment || '')
+            };
+
+            const created = window.rms.addRisk(payload);
+            if (created) {
+                createdRisks.push(created);
+            }
+        });
+
+        if (!createdRisks.length) {
+            alert('Aucun risque Draft n’a pu être créé.');
+            return;
+        }
+
+        if (typeof window.switchTab === 'function') {
+            window.switchTab('risks');
+        }
+
+        if (typeof window.showNotification === 'function') {
+            window.showNotification('success', `${createdRisks.length} risque(s) créé(s) en Draft`);
+            return;
+        }
+
+        alert(`${createdRisks.length} risque(s) créé(s) en Draft.`);
+    }
+
     function bindEvents() {
         document.querySelectorAll('.qa-subtab').forEach((btn) => {
             btn.addEventListener('click', () => setView(btn.dataset.qaView));
@@ -587,6 +634,7 @@
             importJson(evt.target.files[0]);
             evt.target.value = '';
         });
+        dom.createDraftRisksBtn.addEventListener('click', convertOverviewScenariosToDraftRisks);
     }
 
     function render() {
@@ -626,6 +674,7 @@
         dom.exportCsvBtn = document.getElementById('qaExportCsvBtn');
         dom.importBtn = document.getElementById('qaImportBtn');
         dom.importFile = document.getElementById('qaImportFile');
+        dom.createDraftRisksBtn = document.getElementById('qaCreateDraftRisksBtn');
 
         load();
         renderMatrix();
