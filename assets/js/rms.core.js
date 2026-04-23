@@ -7469,29 +7469,32 @@ class RiskManagementSystem {
             ];
 
             const levelColorMap = {
-                'level-1': 'rgba(46, 204, 113, 0.5)',
+                'level-1': 'rgba(46, 204, 113, 0.45)',
                 'level-2': 'rgba(241, 196, 15, 0.5)',
-                'level-3': 'rgba(230, 126, 34, 0.5)',
+                'level-3': 'rgba(230, 126, 34, 0.55)',
                 'level-4': 'rgba(231, 76, 60, 0.6)'
             };
 
-            const getSeveritySegments = (minScore, maxScore) => {
-                const segments = [];
-                severityStops.forEach(stop => {
-                    const overlapStart = Math.max(minScore, stop.min);
-                    const overlapEnd = Math.min(maxScore, stop.max);
-                    if (overlapEnd > overlapStart) {
-                        segments.push({
-                            className: stop.className,
-                            size: overlapEnd - overlapStart
-                        });
-                    }
-                });
-                return segments;
+            const getSeverityClassFromScore = (score) => {
+                const value = Number.isFinite(score) ? score : 0;
+                const match = severityStops.find(stop => value >= stop.min && value < stop.max);
+                return match?.className || 'level-1';
+            };
+
+            const getCoefficientBounds = (index) => {
+                const current = Number(mitigationOptions[index]?.coefficient) || 0;
+                const previous = Number(mitigationOptions[index - 1]?.coefficient);
+                const next = Number(mitigationOptions[index + 1]?.coefficient);
+                const lower = Number.isFinite(previous) ? (previous + current) / 2 : 0;
+                const upper = Number.isFinite(next) ? (next + current) / 2 : 1;
+                return {
+                    lower: Math.max(0, Math.min(1, lower)),
+                    upper: Math.max(0, Math.min(1, upper))
+                };
             };
 
             brutLevels.forEach(level => {
-                mitigationOptions.forEach(option => {
+                mitigationOptions.forEach((option, optionIndex) => {
                     const cell = document.createElement('div');
                     cell.className = 'matrix-cell';
                     cell.dataset.brutLevel = level.value;
@@ -7502,21 +7505,32 @@ class RiskManagementSystem {
                     const remainingFactor = 1 - mitigationReduction;
                     const minScore = level.min * remainingFactor;
                     const maxScore = level.max * remainingFactor;
-                    const segments = getSeveritySegments(minScore, maxScore);
 
-                    const primaryLevel = segments[segments.length - 1]?.className || 'level-1';
+                    const representativeScore = (minScore + maxScore) / 2;
+                    const primaryLevel = getSeverityClassFromScore(representativeScore);
                     cell.classList.add(primaryLevel);
 
-                    if (segments.length >= 2) {
-                        const lowerSegment = segments[0];
-                        const upperSegment = segments[segments.length - 1];
-                        const total = lowerSegment.size + upperSegment.size;
-                        const lowerPct = total > 0 ? (lowerSegment.size / total) * 100 : 50;
-                        const upperPct = Math.max(0, Math.min(100, 100 - lowerPct));
-                        const lowerColor = levelColorMap[lowerSegment.className] || levelColorMap['level-1'];
-                        const upperColor = levelColorMap[upperSegment.className] || levelColorMap['level-1'];
+                    const coefficientBounds = getCoefficientBounds(optionIndex);
+                    const coefficientRange = Math.max(0.01, coefficientBounds.upper - coefficientBounds.lower);
+                    const brutRange = Math.max(0.01, level.max - level.min);
 
-                        cell.style.background = `linear-gradient(to top, ${lowerColor} 0 ${lowerPct}%, ${upperColor} ${lowerPct}% 100%)`;
+                    const sampleCoefficients = [0.25, 0.75].map(ratio => coefficientBounds.lower + (ratio * coefficientRange));
+                    const sampleBrutScores = [0.75, 0.25].map(ratio => level.min + (ratio * brutRange));
+
+                    const virtualColors = [];
+                    sampleBrutScores.forEach(brutSample => {
+                        sampleCoefficients.forEach(coeffSample => {
+                            const mitigation = Math.max(0, Math.min(1, coeffSample));
+                            const netSample = brutSample * (1 - mitigation);
+                            const severityClass = getSeverityClassFromScore(netSample);
+                            virtualColors.push(levelColorMap[severityClass] || levelColorMap['level-1']);
+                        });
+                    });
+
+                    const uniqueColors = new Set(virtualColors);
+                    if (uniqueColors.size > 1) {
+                        const [topLeft, topRight, bottomLeft, bottomRight] = virtualColors;
+                        cell.style.background = `conic-gradient(from 270deg at 50% 50%, ${topLeft} 0 25%, ${topRight} 25% 50%, ${bottomRight} 50% 75%, ${bottomLeft} 75% 100%)`;
                     }
 
                     netGrid.appendChild(cell);
@@ -7620,10 +7634,36 @@ class RiskManagementSystem {
                         return;
                     }
 
-                    const leftPercent = ((colIndex + 0.5) / mitigationOrder.length) * 100;
-                    const bottomPercent = ((brutLevelsOrder.length - rowIndex - 0.5) / brutLevelsOrder.length) * 100;
+                    const brutLevelRanges = {
+                        critique: { min: 12, max: 16 },
+                        fort: { min: 6, max: 12 },
+                        modere: { min: 3, max: 6 },
+                        faible: { min: 0, max: 3 }
+                    };
+                    const levelRange = brutLevelRanges[brutLevel] || { min: 0, max: 3 };
+                    const brutScore = Number.isFinite(netInfo.brutScore) ? netInfo.brutScore : levelRange.min;
+                    const netScore = Number.isFinite(netInfo.score) ? netInfo.score : 0;
+                    const rangeSize = Math.max(0.01, levelRange.max - levelRange.min);
+                    const normalizedBrut = Math.max(0, Math.min(0.999, (brutScore - levelRange.min) / rangeSize));
 
-                    const key = `${colIndex}-${rowIndex}`;
+                    const selectedOption = mitigationOptions.find(option => option.value === netInfo.effectiveness);
+                    const selectedCoefficient = Math.max(0, Math.min(1, Number(selectedOption?.coefficient) || 0));
+                    const remainingFactor = 1 - selectedCoefficient;
+                    const netMin = levelRange.min * remainingFactor;
+                    const netMax = levelRange.max * remainingFactor;
+                    const netRange = Math.max(0.01, netMax - netMin);
+                    const normalizedNet = Math.max(0, Math.min(0.999, (netScore - netMin) / netRange));
+
+                    const virtualCol = Math.min(1, Math.floor(normalizedNet * 2));
+                    const virtualRow = Math.min(1, Math.floor((1 - normalizedBrut) * 2));
+                    const withinCol = (virtualCol + 0.5) / 2;
+                    const withinRow = (virtualRow + 0.5) / 2;
+
+                    const leftPercent = ((colIndex + withinCol) / mitigationOrder.length) * 100;
+                    const yFromTop = rowIndex + withinRow;
+                    const bottomPercent = ((brutLevelsOrder.length - yFromTop) / brutLevelsOrder.length) * 100;
+
+                    const key = `${colIndex}-${rowIndex}-${virtualCol}-${virtualRow}`;
                     const index = cellCounts[key] || 0;
                     cellCounts[key] = index + 1;
                     const slots = cellCounts[key];
