@@ -18,13 +18,13 @@ function updateNetSeverityBadge(impactValue) {
         : (numericImpact >= 4 ? 'critique' : numericImpact === 3 ? 'fort' : numericImpact === 2 ? 'modere' : 'faible');
 
     const severityLabels = {
-        critique: 'Critical',
-        fort: 'High',
-        modere: 'Moderate',
-        faible: 'Low'
+        critique: 'Critical Risk',
+        fort: 'High Risk',
+        modere: 'Moderate Risk',
+        faible: 'Low Risk'
     };
 
-    badge.textContent = `Net risk ${severityLabels[severity] || ''}`;
+    badge.textContent = severityLabels[severity] || '';
     if (severity) {
         badge.dataset.severity = severity;
     } else {
@@ -683,8 +683,8 @@ function initRiskEditMatrix() {
                 cell.dataset.impact = impact;
 
                 const riskLevel = prob * impact;
-                if (riskLevel <= 4) cell.classList.add('level-1');
-                else if (riskLevel <= 8) cell.classList.add('level-2');
+                if (riskLevel < 3) cell.classList.add('level-1');
+                else if (riskLevel < 6) cell.classList.add('level-2');
                 else if (riskLevel <= 12) cell.classList.add('level-3');
                 else cell.classList.add('level-4');
 
