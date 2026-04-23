@@ -11714,6 +11714,9 @@ class RiskManagementSystem {
                 Array.from(subProcessSelect.options).forEach(opt => {
                     opt.selected = subProcessValues.includes(opt.value);
                 });
+                if (typeof syncRiskMultiSelectChipsFromSelect === 'function') {
+                    syncRiskMultiSelectChipsFromSelect('sousProcessus');
+                }
             }
             if (corruptionTypeSelect) {
                 Array.from(corruptionTypeSelect.options).forEach(opt => {
