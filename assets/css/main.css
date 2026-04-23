@@ -3257,6 +3257,16 @@ tbody tr:hover {
     color: #856404;
 }
 
+.control-status-badge.delayed {
+    background: #fce6d5;
+    color: #8a3d06;
+}
+
+.control-status-badge.abandoned {
+    background: #f4f4f5;
+    color: #52525b;
+}
+
 .control-status-badge.termine {
     background: #d4edda;
     color: #155724;
