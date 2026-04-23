@@ -574,6 +574,11 @@ body.feedback-mode-paused .feedback-panel * {
     grid-template-rows: repeat(4, 1fr);
 }
 
+.matrix-grid.net-grid {
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+}
+
 .matrix-cell {
     border: 1px solid var(--border-color);
     position: relative;
@@ -589,6 +594,10 @@ body.feedback-mode-paused .feedback-panel * {
 .matrix-cell.level-2 { background: linear-gradient(135deg, rgba(241, 196, 15, 0.2), rgba(241, 196, 15, 0.4)); }
 .matrix-cell.level-3 { background: linear-gradient(135deg, rgba(230, 126, 34, 0.2), rgba(230, 126, 34, 0.4)); }
 .matrix-cell.level-4 { background: linear-gradient(135deg, rgba(231, 76, 60, 0.3), rgba(231, 76, 60, 0.5)); }
+.matrix-grid.net-grid .matrix-cell.merged-right { border-right-width: 0; }
+.matrix-grid.net-grid .matrix-cell.merged-left { border-left-width: 0; }
+.matrix-grid.net-grid .matrix-cell.merged-bottom { border-bottom-width: 0; }
+.matrix-grid.net-grid .matrix-cell.merged-top { border-top-width: 0; }
 
 .matrix-net-row-labels {
     position: absolute;
