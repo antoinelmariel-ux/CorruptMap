@@ -291,10 +291,10 @@ window.formatCoefficient = formatCoefficient;
 window.getFormAggravatingSelection = getFormAggravatingSelection;
 
 const MITIGATION_EFFECTIVENESS_ORDER = Object.freeze([
-    'inefficace',
-    'insuffisant',
+    'efficace',
     'ameliorable',
-    'efficace'
+    'insuffisant',
+    'inefficace'
 ]);
 
 const MITIGATION_EFFECTIVENESS_SCALE = Object.freeze({
