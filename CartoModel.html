@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Corruption Risk Mapping - Sapin II v2.14.96</title>
+    <title>Corruption Risk Mapping - Sapin II v2.14.98</title>
     <link rel="stylesheet" href="assets/css/main.css">
     <!-- Local dependencies with CDN fallback -->
     <script>
@@ -594,7 +594,7 @@
                                 <div class="matrix">
                                     <div class="matrix-grid" id="matrixGridNet"></div>
                                     <div class="matrix-net-col-labels" id="matrixNetColLabels"></div>
-                                    <div class="axis-label x-axis">Control effectiveness →</div>
+                                    <div class="axis-label x-axis">Mastery level (75% · 50% · 25% · 0%) →</div>
                                     <div class="axis-label y-axis">
                                         <span class="axis-text">Gross risk level</span>
                                         <span class="axis-arrow" aria-hidden="true">↑</span>
@@ -891,7 +891,7 @@
             </div>
         </div>
         <footer class="app-footer">
-            <span class="app-version">Version 2.14.97</span>
+            <span class="app-version">Version 2.14.98</span>
         </footer>
     </div>
 
@@ -1512,20 +1512,20 @@
                                 <div class="net-slider-layout">
                                     <div class="net-slider-panel" data-state="net">
                                         <div class="net-slider-header">
-                                            <div class="net-slider-title">Applied control level</div>
+                                            <div class="net-slider-title">Mastery level</div>
                                         </div>
                                         <div class="net-slider-track">
-                                            <input type="range" id="netMitigationSlider" class="net-slider-input" min="1" max="4" step="1" value="2" aria-label="Net risk control level">
+                                            <input type="range" id="netMitigationSlider" class="net-slider-input" min="1" max="4" step="1" value="2" aria-label="Net risk mastery level">
                                             <div class="net-slider-marks" id="netMitigationMarks"></div>
                                         </div>
                                         <div class="net-slider-footer">
-                                            <span class="net-slider-percent" id="netMitigationPercentLabel">Reduction 25%</span>
+                                            <span class="net-slider-percent" id="netMitigationPercentLabel">Mastery 50%</span>
                                             <span class="net-severity-badge" id="netSeverityLabel" data-severity="faible">Low Risk</span>
                                         </div>
                                     </div>
                                     <div id="matrixDescriptionNet" class="matrix-description">
                                         <div class="matrix-description-empty">
-                                            Adjust control level to visualize effectiveness applied to risk.
+                                            Adjust mastery level to visualize net risk.
                                         </div>
                                     </div>
                                 </div>
@@ -1533,7 +1533,7 @@
                             <div class="risk-score-card" data-state="net">
                                 <div class="risk-score-title">Net Risk</div>
                                 <div class="risk-score-value" id="scoreNet">Score: 0</div>
-                                <div class="risk-score-meta" id="coordNet">Gross 0 × Reduction 0%</div>
+                                <div class="risk-score-meta" id="coordNet">Aggravated Gross 0 × Mastery 0%</div>
                             </div>
                         </div>
                     </div>
