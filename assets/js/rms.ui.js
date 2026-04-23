@@ -312,7 +312,6 @@ function searchActionPlans(searchTerm, sourceElement) {
 }
 window.searchActionPlans = searchActionPlans;
 
-var lastRiskData = null;
 var selectedControlsForRisk = [];
 var controlAssignmentsForRisk = {};
 var controlFilterQueryForRisk = '';
@@ -1067,73 +1066,35 @@ function addNewRisk() {
         form.reset();
 
         const statutSelect = document.getElementById('statut');
-        if (lastRiskData) {
-            setSelectedValues('processus', lastRiskData.processusAssocies || (lastRiskData.processus ? [lastRiskData.processus] : []));
-            rms.updateSousProcessusOptions();
-            setSelectedValues('sousProcessus', lastRiskData.sousProcessusAssocies || (lastRiskData.sousProcessus ? [lastRiskData.sousProcessus] : []));
-            setSelectedValues('typeCorruption', lastRiskData.typesCorruption || (lastRiskData.typeCorruption ? [lastRiskData.typeCorruption] : []));
-            setSelectedValues('tiers', lastRiskData.tiers || []);
-
-            setRiskCountriesSelection(lastRiskData.paysExposes || []);
-
-            document.getElementById('description').value = lastRiskData.description || '';
-            document.getElementById('example').value = lastRiskData.example || '';
-            document.getElementById('comment').value = lastRiskData.comment || '';
-            document.getElementById('probBrut').value = lastRiskData.probBrut || 1;
-            document.getElementById('impactBrut').value = lastRiskData.impactBrut || 1;
-            const mitigationInput = document.getElementById('mitigationEffectiveness');
-            const probNetInput = document.getElementById('probNet');
-            const impactNetInput = document.getElementById('impactNet');
-            const defaultMitigation = typeof DEFAULT_MITIGATION_EFFECTIVENESS === 'string'
-                ? DEFAULT_MITIGATION_EFFECTIVENESS
-                : 'insuffisant';
-            const mitigationLevel = lastRiskData.mitigationEffectiveness || defaultMitigation;
-            if (mitigationInput) {
-                mitigationInput.value = mitigationLevel;
-            }
-            if (probNetInput && typeof getMitigationColumnFromLevel === 'function') {
-                probNetInput.value = getMitigationColumnFromLevel(mitigationLevel);
-            }
-            if (impactNetInput) {
-                impactNetInput.value = lastRiskData.impactNet || impactNetInput.value || 1;
-            }
-            selectedControlsForRisk = [...(lastRiskData.controls || [])];
-            setRiskControlAssignments(lastRiskData.controlAssignments || []);
-            setRiskBenefitChips('undue', lastRiskData.avantagesIndus || []);
-            setRiskBenefitChips('expected', lastRiskData.avantagesAttendus || []);
-            selectedActionPlansForRisk = [...(lastRiskData.actionPlans || [])];
-            setAggravatingFactorsSelection(lastRiskData.aggravatingFactors || null);
-        } else {
-            rms.updateSousProcessusOptions();
-            selectedControlsForRisk = [];
-            setRiskControlAssignments([]);
-            setRiskBenefitChips('undue', []);
-            setRiskBenefitChips('expected', []);
-            selectedActionPlansForRisk = [];
-            setAggravatingFactorsSelection(null);
-            setRiskCountriesSelection([]);
-            const mitigationInput = document.getElementById('mitigationEffectiveness');
-            const probNetInput = document.getElementById('probNet');
-            const impactNetInput = document.getElementById('impactNet');
-            const defaultMitigation = typeof DEFAULT_MITIGATION_EFFECTIVENESS === 'string'
-                ? DEFAULT_MITIGATION_EFFECTIVENESS
-                : 'insuffisant';
-            if (mitigationInput) {
-                mitigationInput.value = defaultMitigation;
-            }
-            if (probNetInput && typeof getMitigationColumnFromLevel === 'function') {
-                probNetInput.value = getMitigationColumnFromLevel(defaultMitigation);
-            }
-            if (impactNetInput) {
-                impactNetInput.value = impactNetInput.value || 1;
-            }
-            document.getElementById('comment').value = '';
+        rms.updateSousProcessusOptions();
+        selectedControlsForRisk = [];
+        setRiskControlAssignments([]);
+        setRiskBenefitChips('undue', []);
+        setRiskBenefitChips('expected', []);
+        selectedActionPlansForRisk = [];
+        setAggravatingFactorsSelection(null);
+        setRiskCountriesSelection([]);
+        const mitigationInput = document.getElementById('mitigationEffectiveness');
+        const probNetInput = document.getElementById('probNet');
+        const impactNetInput = document.getElementById('impactNet');
+        const defaultMitigation = typeof DEFAULT_MITIGATION_EFFECTIVENESS === 'string'
+            ? DEFAULT_MITIGATION_EFFECTIVENESS
+            : 'insuffisant';
+        if (mitigationInput) {
+            mitigationInput.value = defaultMitigation;
         }
+        if (probNetInput && typeof getMitigationColumnFromLevel === 'function') {
+            probNetInput.value = getMitigationColumnFromLevel(defaultMitigation);
+        }
+        if (impactNetInput) {
+            impactNetInput.value = impactNetInput.value || 1;
+        }
+        document.getElementById('comment').value = '';
         renderAllRiskMultiSelectChips();
 
         if (statutSelect) {
             const defaultStatus = rms?.config?.riskStatuses?.[0]?.value || '';
-            const targetStatus = lastRiskData?.statut || defaultStatus;
+            const targetStatus = defaultStatus;
             if (targetStatus) {
                 const normalized = String(targetStatus);
                 const hasOption = Array.from(statutSelect.options).some(opt => opt.value === normalized);
@@ -1309,18 +1270,6 @@ function saveRisk() {
         rms.renderRiskPoints();
         rms.updateRiskDetailsList();
     }
-
-    lastRiskData = {
-        ...formData,
-        tiers: [...formData.tiers],
-        paysExposes: [...formData.paysExposes],
-        controls: [...formData.controls],
-        controlAssignments: [...formData.controlAssignments],
-        actionPlans: [...formData.actionPlans],
-        aggravatingFactors: typeof normalizeAggravatingFactors === 'function'
-            ? normalizeAggravatingFactors(formData.aggravatingFactors)
-            : { group1: [], group2: [] }
-    };
 
     if (rms && typeof rms.clearUnsavedChanges === 'function') {
         rms.clearUnsavedChanges('riskForm');
