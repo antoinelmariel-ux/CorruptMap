@@ -5988,7 +5988,14 @@ tbody tr:hover {
 .qa-card-comment { grid-area: comment; }
 
 .qa-selected-caption { color: var(--text-secondary); font-size: 12px; }
-.qa-current-scenario { font-weight: 700; margin: 6px 0 10px; }
+.qa-current-scenario {
+    font-weight: 700;
+    margin: 6px 0 10px;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    word-break: break-word;
+}
 .qa-actions-row, .qa-nav-actions { display: flex; gap: 8px; margin-top: 10px; }
 .qa-actions-row { justify-content: flex-end; }
 .btn.btn-icon {
@@ -6009,6 +6016,7 @@ tbody tr:hover {
     max-width: 520px;
     aspect-ratio: 1;
     margin: 0 auto;
+    padding-bottom: 34px;
 }
 
 .qa-matrix-surface {
@@ -6026,7 +6034,7 @@ tbody tr:hover {
 
 
 .qa-matrix-surface .axis-label.x-axis {
-    bottom: 8px;
+    bottom: -30px;
     transform: translateX(-50%);
     z-index: 4;
 }
