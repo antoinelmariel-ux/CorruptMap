@@ -2,39 +2,39 @@
 
 const RISK_PROBABILITY_INFO = {
     1: {
-        label: 'Peu probable',
-        text: "Evénement non survenu sur les 5 dernières années. Evénement non attendu sur les 5 prochaines années"
+        label: 'Unlikely',
+        text: 'Event has not occurred in the past 5 years. Event not expected to occur in the next 5 years.'
     },
     2: {
-        label: 'Moyennement probable',
-        text: "Evénement survenu 1 fois au cours des 5 dernières années. Evénement pouvant survenir 1 fois au cours des 5 prochaines années"
+        label: 'Moderately likely',
+        text: 'Event that has occurred once in the past 5 years. Event that may occur once in the next 5 years.'
     },
     3: {
-        label: 'Probable',
-        text: "Evénement survenu 1 fois au cours de l’année passée. Evénement pouvant survenir 1 fois au cours de l’année à venir"
+        label: 'Likely',
+        text: 'Event that has occurred once in the past year. Event that may occur once in the coming year.'
     },
     4: {
-        label: 'Très probable',
-        text: "Evénement survenu plusieurs fois au cours de l’année passée. Evénement attendu 1 ou plusieurs fois au cours de l’année à venir"
+        label: 'Very likely',
+        text: 'Event that occurred several times in the past year. Event expected to occur once or more times in the coming year.'
     }
 };
 
 const RISK_IMPACT_INFO = {
     1: {
-        label: 'Faible',
-        text: "<p><strong>Impact financier</strong></p><ul><li>&lt; 300K&euro;</li></ul><p><strong>Impact juridique / r&eacute;glementaire</strong></p><ul><li>Sanction interne disciplinaire envers un collaborateur</li></ul><p><strong>Impact r&eacute;putationnel</strong></p><ul><li>Impact nul, interne ou externe local (ex : Partenaire)</li><li>Atteinte limit&eacute;e &agrave; quelques jours</li></ul><p><strong>Impact op&eacute;rationnel</strong></p><ul><li>Peu ou pas de perturbations</li><li>Rallentissement des activit&eacute;s</li></ul>"
+        label: 'Low',
+        text: "<p><strong>Financial (base)</strong></p><ul><li>&lt; 300K€</li></ul><p><strong>Legal</strong></p><ul><li>internal disciplinary action against an employee</li></ul><p><strong>Reputational</strong></p><ul><li>no impact, internal or local external (e.g., partners)</li><li>disruption limited to a few days</li></ul><p><strong>Operational</strong></p><ul><li>little or no disruption</li><li>slowdown in operations</li></ul>"
     },
     2: {
-        label: 'Modéré',
-        text: "<p><strong>Impact financier</strong></p><ul><li>&lt; 3M&euro;</li></ul><p><strong>Impact juridique / r&eacute;glementaire</strong></p><ul><li>Proc&eacute;dure judiciaire ou administrative &agrave; l&rsquo;&eacute;chelle d&rsquo;un collaborateur</li></ul><p><strong>Impact r&eacute;putationnel</strong></p><ul><li><p>Impact externe r&eacute;gional (ex.&nbsp;: ARS)</p></li><li><p>Atteinte limit&eacute;e &agrave; quelques semaines</p></li></ul><p><strong>Impact op&eacute;rationnel</strong></p><ul><li><p>Perturbations l&eacute;g&egrave;res</p></li><li><p>Perte temporaire d&rsquo;activit&eacute;s ou de march&eacute;s</p></li></ul>"
+        label: 'Moderate',
+        text: "<p><strong>Financial (base)</strong></p><ul><li>[300K€ ; 3M€[</li></ul><p><strong>Legal</strong></p><ul><li>legal or administrative proceedings involving an individual employee</li></ul><p><strong>Reputational</strong></p><ul><li>regional external impact</li><li>disruption limited to a few weeks</li></ul><p><strong>Operational</strong></p><ul><li>minor disruptions</li><li>temporary loss of business or contracts</li></ul>"
     },
     3: {
-        label: 'Fort',
-        text: "<p><strong>Impact financier</strong></p><ul><li>&lt; 30M&euro;</li></ul><p><strong>Impact juridique / r&eacute;glementaire</strong></p><ul><li>Sanctions &agrave; l&rsquo;&eacute;chelle d&rsquo;une filiale Convention juridique d&rsquo;int&eacute;r&ecirc;t public (CJIP)</li></ul><p><strong>Impact r&eacute;putationnel</strong></p><ul><li><p>Impact externe national (ex.&nbsp;: minist&egrave;re de la Sant&eacute;)</p></li><li><p>Crise m&eacute;diatique nationale</p></li><li><p>Atteinte prolong&eacute;e sur plusieurs mois</p></li></ul><p><strong>Impact op&eacute;rationnel</strong></p><ul><li><p>Perturbations importantes</p></li><li><p>Perte d&eacute;finitive d&rsquo;activit&eacute;s ou de march&eacute;s</p></li></ul>"
+        label: 'High',
+        text: "<p><strong>Financial (base)</strong></p><ul><li>[3M€ ; 30M€[</li></ul><p><strong>Legal</strong></p><ul><li>sanctions at the affiliate level; Judicial Public Interest Agreement (CJIP)</li></ul><p><strong>Reputational</strong></p><ul><li>national external impact (e.g., Department of Health)</li><li>national media crisis</li><li>impact lasting several months</li></ul><p><strong>Operational</strong></p><ul><li>significant disruptions</li><li>permanent loss of business or contracts</li></ul>"
     },
     4: {
-        label: 'Critique',
-        text: "<p><strong>Impact financier</strong></p><ul><li>&ge; 30M&euro;</li></ul><p><strong>Impact juridique / r&eacute;glementaire</strong></p><ul><li><p>Sanctions &agrave; l&rsquo;&eacute;chelle du Groupe</p></li><li><p>Condamnation p&eacute;nale</p></li></ul><p><strong>Impact r&eacute;putationnel</strong></p><ul><li><p>Impact externe international (ex.&nbsp;: EMA, FDA, etc.)</p></li><li><p>Crise m&eacute;diatique internationale</p></li><li><p>Atteinte durable sur plusieurs ann&eacute;es</p></li></ul><p><strong>Impact op&eacute;rationnel</strong></p><ul><li><p>Arr&ecirc;t des activit&eacute;s</p></li></ul>"
+        label: 'Critical',
+        text: "<p><strong>Financial (base)</strong></p><ul><li>≥ 30M€</li></ul><p><strong>Legal</strong></p><ul><li>group-wide sanctions; criminal conviction</li></ul><p><strong>Reputational</strong></p><ul><li>international external impact (e.g., EMA, FDA, etc.)</li><li>international media crisis</li><li>long-term damage lasting several years</li></ul><p><strong>Operational</strong></p><ul><li>cessation of operations</li></ul>"
     }
 };
 
