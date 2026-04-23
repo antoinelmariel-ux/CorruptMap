@@ -40,10 +40,10 @@ function ensureNetMitigationOptions() {
     netMitigationOptions = typeof getMitigationEffectivenessOptions === 'function'
         ? getMitigationEffectivenessOptions()
         : [
-            { value: 'inefficace', label: 'Ineffective', coefficient: 0 },
-            { value: 'insuffisant', label: 'Insufficient', coefficient: 0.25 },
+            { value: 'efficace', label: 'Effective', coefficient: 0.75 },
             { value: 'ameliorable', label: 'Room for improvement', coefficient: 0.5 },
-            { value: 'efficace', label: 'Effective', coefficient: 0.75 }
+            { value: 'insuffisant', label: 'Insufficient', coefficient: 0.25 },
+            { value: 'inefficace', label: 'Ineffective', coefficient: 0 }
         ];
 
     return netMitigationOptions;
