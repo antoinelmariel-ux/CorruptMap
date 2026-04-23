@@ -7433,7 +7433,7 @@ class RiskManagementSystem {
                     const riskLevel = prob * impact;
                     if (riskLevel < 3) cell.classList.add('level-1');
                     else if (riskLevel < 6) cell.classList.add('level-2');
-                    else if (riskLevel <= 12) cell.classList.add('level-3');
+                    else if (riskLevel < 12) cell.classList.add('level-3');
                     else cell.classList.add('level-4');
 
                     brutGrid.appendChild(cell);
