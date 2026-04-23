@@ -7478,13 +7478,13 @@ class RiskManagementSystem {
 
             const subCellCount = 2;
             brutLevels.forEach(level => {
-                mitigationOptions.forEach((option) => {
-                    const coefficient = Number(option.coefficient) || 0;
-                    const mitigationReduction = Math.min(Math.max(coefficient, 0), 1);
-                    const remainingFactor = 1 - mitigationReduction;
-                    const levelSpan = level.max - level.min;
+                const levelSpan = level.max - level.min;
 
-                    for (let subRow = 0; subRow < subCellCount; subRow++) {
+                for (let subRow = 0; subRow < subCellCount; subRow++) {
+                    mitigationOptions.forEach((option) => {
+                        const coefficient = Number(option.coefficient) || 0;
+                        const mitigationReduction = Math.min(Math.max(coefficient, 0), 1);
+                        const remainingFactor = 1 - mitigationReduction;
                         const grossBandMax = level.max - ((levelSpan / subCellCount) * subRow);
                         const grossBandMin = level.max - ((levelSpan / subCellCount) * (subRow + 1));
                         const netBandMin = grossBandMin * remainingFactor;
@@ -7510,8 +7510,8 @@ class RiskManagementSystem {
 
                             netGrid.appendChild(cell);
                         }
-                    }
-                });
+                    });
+                }
             });
             const colLabels = document.getElementById('matrixNetColLabels');
             if (colLabels) {
