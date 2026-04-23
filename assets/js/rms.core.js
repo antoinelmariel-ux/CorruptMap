@@ -7454,7 +7454,7 @@ class RiskManagementSystem {
                     { value: 'efficace', label: 'Effective', coefficient: 0.75 }
                 ];
 
-            const brutLevels = [
+            const netLevels = [
                 { value: 'critique', label: 'Critical Risk', range: 'score ≥ 12', reference: 14 },
                 { value: 'fort', label: 'High Risk', range: '6 ≤ score < 12', reference: 9 },
                 { value: 'modere', label: 'Moderate Risk', range: '3 ≤ score < 6', reference: 4.5 },
@@ -7475,16 +7475,13 @@ class RiskManagementSystem {
                 return severityClassMap[level] || 'level-1';
             };
 
-            brutLevels.forEach(level => {
+            netLevels.forEach(level => {
                 mitigationOptions.forEach(option => {
                     const cell = document.createElement('div');
                     cell.className = 'matrix-cell';
-                    cell.dataset.brutLevel = level.value;
+                    cell.dataset.netLevel = level.value;
                     cell.dataset.effectiveness = option.value;
-                    const coefficient = Number(option.coefficient) || 0;
-                    const mitigationReduction = Math.min(Math.max(coefficient, 0), 1);
-                    const referenceScore = level.reference * (1 - mitigationReduction);
-                    cell.classList.add(getSeverityClass(referenceScore));
+                    cell.classList.add(getSeverityClass(level.reference));
                     netGrid.appendChild(cell);
                 });
             });
@@ -7527,7 +7524,7 @@ class RiskManagementSystem {
         const mitigationOrder = Array.isArray(MITIGATION_EFFECTIVENESS_ORDER)
             ? [...MITIGATION_EFFECTIVENESS_ORDER]
             : ['inefficace', 'insuffisant', 'ameliorable', 'efficace'];
-        const brutLevelsOrder = ['critique', 'fort', 'modere', 'faible'];
+        const netLevelsOrder = ['critique', 'fort', 'modere', 'faible'];
         const severityLabelMap = {
             critique: 'Critical Risk',
             fort: 'High Risk',
@@ -7574,20 +7571,19 @@ class RiskManagementSystem {
                     const netInfo = typeof getRiskNetInfo === 'function'
                         ? getRiskNetInfo(risk)
                         : { score: 0, brutScore: 0, coefficient: 0, effectiveness: 'inefficace', label: 'Ineffective' };
-                    const brutLevel = typeof getRiskBrutLevel === 'function'
-                        ? getRiskBrutLevel(risk)
-                        : (typeof getRiskSeverityFromScore === 'function'
-                            ? getRiskSeverityFromScore(netInfo.brutScore)
-                            : 'faible');
+                    const numericNetScore = Number(netInfo.score) || 0;
+                    const netLevel = typeof getRiskSeverityFromScore === 'function'
+                        ? getRiskSeverityFromScore(numericNetScore)
+                        : (numericNetScore >= 12 ? 'critique' : numericNetScore >= 6 ? 'fort' : numericNetScore >= 3 ? 'modere' : 'faible');
 
-                    const rowIndex = brutLevelsOrder.indexOf(brutLevel);
+                    const rowIndex = netLevelsOrder.indexOf(netLevel);
                     const colIndex = mitigationOrder.indexOf(netInfo.effectiveness);
                     if (rowIndex === -1 || colIndex === -1) {
                         return;
                     }
 
                     const leftPercent = ((colIndex + 0.5) / mitigationOrder.length) * 100;
-                    const bottomPercent = ((brutLevelsOrder.length - rowIndex - 0.5) / brutLevelsOrder.length) * 100;
+                    const bottomPercent = ((netLevelsOrder.length - rowIndex - 0.5) / netLevelsOrder.length) * 100;
 
                     const key = `${colIndex}-${rowIndex}`;
                     const index = cellCounts[key] || 0;
