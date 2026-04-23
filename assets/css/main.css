@@ -6062,6 +6062,12 @@ tbody tr:hover {
     gap: 12px;
 }
 
+.qa-overview-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 12px;
+}
+
 .qa-overview-matrix-layout {
     display: grid;
     grid-template-columns: 140px 1fr;
