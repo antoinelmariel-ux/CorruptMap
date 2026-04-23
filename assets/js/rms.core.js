@@ -8092,9 +8092,9 @@ class RiskManagementSystem {
             container.innerHTML = scoredRisks.map(entry => {
                 const { risk, score } = entry;
                 let scoreClass = 'low';
-                if (score > 12) scoreClass = 'critical';
-                else if (score > 8) scoreClass = 'high';
-                else if (score > 4) scoreClass = 'medium';
+                if (score >= 12) scoreClass = 'critical';
+                else if (score >= 6) scoreClass = 'high';
+                else if (score >= 3) scoreClass = 'medium';
 
                 const processLabel = risk?.processus && String(risk.processus).trim()
                     ? this.getProcessLabel(String(risk.processus).trim())
