@@ -7498,7 +7498,7 @@ class RiskManagementSystem {
                             cell.dataset.subRow = String(subRow);
                             cell.dataset.subCol = String(subCol);
 
-                            const withinBandFactor = subCol === 0 ? 0.75 : 0.25;
+                            const withinBandFactor = subCol === 0 ? 0.25 : 0.75;
                             const representativeScore = netBandMin + ((netBandMax - netBandMin) * withinBandFactor);
                             const primaryLevel = getSeverityClassFromScore(representativeScore);
                             cell.classList.add(primaryLevel);
