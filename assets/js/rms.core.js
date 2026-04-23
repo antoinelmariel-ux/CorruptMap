@@ -148,8 +148,6 @@ class RiskManagementSystem {
         };
         this.controlFilters = {
             type: '',
-            origin: '',
-            status: '',
             search: ''
         };
         this.actionPlanFilters = {
@@ -2926,14 +2924,10 @@ class RiskManagementSystem {
         this.renderRiskCountryColumns();
         this.renderMatrixEntityFilterChips();
         fill('controlType', this.config.controlTypes, 'Select...');
-        fill('controlOrigin', this.config.controlOrigins, 'Select...');
         fill('controlFrequency', this.config.controlFrequencies, 'Select...');
         fill('controlMode', this.config.controlModes, 'Select...');
         fill('controlEffectiveness', this.config.controlEffectiveness, 'Select...');
-        fill('controlStatus', this.config.controlStatuses, 'Select...');
         fill('controlsTypeFilter', this.config.controlTypes, 'All control types');
-        fill('controlsOriginFilter', this.config.controlOrigins, 'All origins');
-        fill('controlsStatusFilter', this.config.controlStatuses, 'All statuses');
         fill('planStatus', this.config.actionPlanStatuses, 'Select...');
         fill('actionPlansStatusFilter', this.config.actionPlanStatuses, 'All statuses');
 
@@ -2984,8 +2978,6 @@ class RiskManagementSystem {
         };
 
         syncFilterValue('type', this.controlFilters?.type || '');
-        syncFilterValue('origin', this.controlFilters?.origin || '');
-        syncFilterValue('status', this.controlFilters?.status || '');
         syncFilterValue('search', this.controlFilters?.search || '');
         syncFilterValue('name', this.actionPlanFilters?.name || '', { attribute: 'data-action-plan-filter' });
         syncFilterValue('owner', this.actionPlanFilters?.owner || '', { attribute: 'data-action-plan-filter' });
@@ -7568,6 +7560,11 @@ class RiskManagementSystem {
             const cellCounts = {};
 
             filteredRisks.forEach(risk => {
+                const riskStatus = this.normalizeStatusValue('risk', risk?.statut, risk?.status, risk?.statusLabel, risk?.state);
+                if (riskStatus === 'not-included') {
+                    return;
+                }
+
                 if (config.mode === 'net') {
                     const netInfo = typeof getRiskNetInfo === 'function'
                         ? getRiskNetInfo(risk)
@@ -9517,33 +9514,21 @@ class RiskManagementSystem {
     // Controls functions
     getFilteredControls() {
         const controls = Array.isArray(this.controls) ? this.controls : [];
-        const { type = '', origin = '', status = '', search = '' } = this.controlFilters || {};
+        const { type = '', search = '' } = this.controlFilters || {};
 
         const typeFilter = String(type || '').toLowerCase();
-        const originFilter = String(origin || '').toLowerCase();
-        const statusFilter = this.normalizeStatusValue('control', status);
         const searchTerm = String(search || '').trim().toLowerCase();
 
-        if (!typeFilter && !originFilter && !statusFilter && !searchTerm) {
+        if (!typeFilter && !searchTerm) {
             return controls.slice();
         }
 
         return controls.filter(control => {
             const controlType = String(control?.type || '').toLowerCase();
-            const controlOrigin = String(control?.origin || '').toLowerCase();
-            const controlStatus = this.normalizeStatusValue('control', control?.status, control?.statusLabel, control?.statut);
             const controlName = String(control?.name || '').toLowerCase();
             const controlOwner = String(control?.owner || '').toLowerCase();
 
             if (typeFilter && controlType !== typeFilter) {
-                return false;
-            }
-
-            if (originFilter && controlOrigin !== originFilter) {
-                return false;
-            }
-
-            if (statusFilter && controlStatus !== statusFilter) {
                 return false;
             }
 
@@ -9590,17 +9575,9 @@ class RiskManagementSystem {
             return acc;
         }, {});
 
-        const originMap = (this.config.controlOrigins || []).reduce((acc, item) => {
+        const effectivenessMap = (this.config.controlEffectiveness || []).reduce((acc, item) => {
             if (item && item.value !== undefined && item.value !== null) {
                 acc[String(item.value).toLowerCase()] = item.label || item.value;
-            }
-            return acc;
-        }, {});
-
-        const statusMap = (this.config.controlStatuses || []).reduce((acc, item) => {
-            if (item && item.value !== undefined && item.value !== null) {
-                const normalizedValue = this.normalizeStatusValue('control', item.value);
-                acc[normalizedValue] = item.label || item.value;
             }
             return acc;
         }, {});
@@ -9611,17 +9588,12 @@ class RiskManagementSystem {
             const normalizedType = rawType ? String(rawType).toLowerCase() : '';
             const typeLabel = normalizedType ? (typeMap[normalizedType] || rawType) : 'Not defined';
             const typeClass = normalizedType ? normalizedType.replace(/[^a-z0-9-]+/g, '-') : 'type-undefined';
-            const rawOrigin = control?.origin ?? '';
-            const normalizedOrigin = rawOrigin ? String(rawOrigin).toLowerCase() : '';
-            const originLabel = normalizedOrigin ? (originMap[normalizedOrigin] || rawOrigin) : '';
-            const originClass = normalizedOrigin ? normalizedOrigin.replace(/[^a-z0-9-]+/g, '-') : 'origin-undefined';
             const ownerLabel = control?.owner || '';
-            const rawStatus = control?.status ?? control?.statusLabel ?? control?.statut ?? '';
-            const normalizedStatus = this.normalizeStatusValue('control', rawStatus);
-            const statusLabel = normalizedStatus
-                ? (statusMap[normalizedStatus] || this.getStatusLabel('control', normalizedStatus, rawStatus) || rawStatus)
+            const rawEffectiveness = control?.effectiveness ?? '';
+            const normalizedEffectiveness = rawEffectiveness ? String(rawEffectiveness).toLowerCase() : '';
+            const effectivenessLabel = normalizedEffectiveness
+                ? (effectivenessMap[normalizedEffectiveness] || rawEffectiveness)
                 : '';
-            const statusClass = normalizedStatus ? normalizedStatus.replace(/[^a-z0-9-]+/g, '-') : '';
 
             return `
                 <div class="controls-table-row" data-control-id="${control.id}">
@@ -9631,14 +9603,11 @@ class RiskManagementSystem {
                     <div class="controls-table-cell control-type-cell">
                         <span class="control-type-badge ${typeClass}">${typeLabel}</span>
                     </div>
-                    <div class="controls-table-cell control-origin-cell">
-                        ${originLabel ? `<span class="control-origin-badge ${originClass}">${originLabel}</span>` : `<span class="text-placeholder">Not defined</span>`}
-                    </div>
                     <div class="controls-table-cell control-owner-cell">
                         ${ownerLabel ? `<span class="control-owner">${ownerLabel}</span>` : `<span class="text-placeholder">Not defined</span>`}
                     </div>
-                    <div class="controls-table-cell control-status-cell">
-                        ${statusLabel ? `<span class="control-status-badge ${statusClass}">${statusLabel}</span>` : `<span class="text-placeholder">Not defined</span>`}
+                    <div class="controls-table-cell control-effectiveness-cell">
+                        ${effectivenessLabel ? `<span class="control-status-badge">${effectivenessLabel}</span>` : `<span class="text-placeholder">Not defined</span>`}
                     </div>
                     <div class="controls-table-cell controls-table-actions">
                         <button class="action-btn" onclick="editControl(${control.id})" title="Edit">✏️</button>
