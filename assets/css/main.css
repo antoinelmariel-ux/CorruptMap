@@ -1604,6 +1604,19 @@ body.feedback-mode-paused .feedback-panel * {
     box-shadow: 0 2px 12px rgba(11, 61, 96, 0.2);
 }
 
+.risk-item.selection-pulse {
+    animation: riskItemSelectionPulse 0.65s ease-out;
+}
+
+@keyframes riskItemSelectionPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(11, 61, 96, 0.35);
+    }
+    100% {
+        box-shadow: 0 0 0 10px rgba(11, 61, 96, 0);
+    }
+}
+
 .risk-item-header {
     display: flex;
     justify-content: space-between;
