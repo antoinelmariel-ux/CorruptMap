@@ -509,6 +509,12 @@
                         <div id="matrixEntityFilterChips" class="filter-chip-group" aria-label="Filter matrix by entities"></div>
                     </div>
                     <div class="filter-group">
+                        <label class="filter-label" for="matrixProcessFilter">Process</label>
+                        <select class="filter-select" id="matrixProcessFilter" data-risk-filter="process" onchange="applyFilters('process', this.value, this)">
+                            <option value="">All processes</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
                         <label class="filter-label" for="matrixStatusFilter">Status</label>
                         <select class="filter-select" id="matrixStatusFilter" data-risk-filter="status" onchange="applyFilters('status', this.value, this)">
                             <option value="">All statuses</option>
@@ -898,7 +904,7 @@
             </div>
         </div>
         <footer class="app-footer">
-            <span class="app-version">Version 2.14.85</span>
+            <span class="app-version">Version 2.14.86</span>
         </footer>
     </div>
 

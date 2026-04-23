@@ -992,6 +992,9 @@ body.feedback-mode-paused .feedback-panel * {
 
 .risk-point.active-point {
     z-index: 30;
+    background: linear-gradient(135deg, #ff6b6b, #c62828);
+    border-color: #ffffff;
+    box-shadow: 0 0 0 2px rgba(198, 40, 40, 0.2), 0 6px 18px rgba(0, 0, 0, 0.28);
 }
 
 .risk-point.edit-point {

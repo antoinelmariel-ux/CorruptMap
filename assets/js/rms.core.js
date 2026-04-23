@@ -6785,6 +6785,17 @@ class RiskManagementSystem {
         return raw;
     }
 
+    getTierLabel(tierValue) {
+        const raw = tierValue == null ? '' : String(tierValue).trim();
+        if (!raw) {
+            return '';
+        }
+        const match = Array.isArray(this.config?.tiers)
+            ? this.config.tiers.find(entry => String(entry?.value || '').trim() === raw)
+            : null;
+        return match?.label || raw;
+    }
+
     getInterviewFilePath(fileName) {
         const base = typeof this.interviewFolder === 'string' && this.interviewFolder.trim()
             ? this.interviewFolder.trim()
@@ -7524,55 +7535,6 @@ class RiskManagementSystem {
             modere: 'Modéré',
             faible: 'Faible'
         };
-        const rankingByView = {
-            brut: new Map(),
-            net: new Map()
-        };
-
-        const rankingDefinitions = {
-            brut: (risk) => {
-                if (typeof getRiskBrutScore === 'function') {
-                    return Number(getRiskBrutScore(risk));
-                }
-                const prob = Number(risk?.probBrut);
-                const impact = Number(risk?.impactBrut);
-                if (!Number.isFinite(prob) || !Number.isFinite(impact)) {
-                    return Number.NaN;
-                }
-                let coefficient = 1;
-                if (typeof getRiskAggravatingCoefficient === 'function') {
-                    coefficient = Number(getRiskAggravatingCoefficient(risk)) || 1;
-                }
-                return prob * impact * coefficient;
-            },
-            net: (risk) => {
-                if (typeof getRiskNetScore === 'function') {
-                    return Number(getRiskNetScore(risk));
-                }
-                if (typeof getRiskNetInfo === 'function') {
-                    return Number(getRiskNetInfo(risk)?.score);
-                }
-                return Number.NaN;
-            }
-        };
-
-        Object.entries(rankingDefinitions).forEach(([viewKey, getScore]) => {
-            const rankedRisks = filteredRisks
-                .map(risk => ({
-                    id: risk.id,
-                    score: Number(getScore(risk))
-                }))
-                .filter(entry => Number.isFinite(entry.score))
-                .sort((a, b) => {
-                    if (b.score !== a.score) return b.score - a.score;
-                    return String(a.id).localeCompare(String(b.id), 'fr', { numeric: true, sensitivity: 'base' });
-                });
-
-            rankedRisks.forEach((entry, index) => {
-                rankingByView[viewKey].set(entry.id, index + 1);
-            });
-        });
-
         Object.entries(viewConfigs).forEach(([viewKey, config]) => {
             const grid = document.getElementById(config.gridId);
             if (!grid) return;
@@ -7636,12 +7598,26 @@ class RiskManagementSystem {
                     point.className = `risk-point ${viewKey}`;
                     point.dataset.riskId = risk.id;
 
-                    const displayText = (typeof risk.example === 'string' && risk.example.trim())
-                        ? risk.example.trim()
-                        : (risk.description || '');
-                    const tooltipSegments = [];
-                    if (displayText) {
-                        tooltipSegments.push(displayText);
+                    const displayText = risk.description || '';
+                    const processLabel = risk?.processus && String(risk.processus).trim()
+                        ? this.getProcessLabel(String(risk.processus).trim())
+                        : 'Not defined';
+                    const selectedSubProcessLabel = risk?.sousProcessus && String(risk.sousProcessus).trim()
+                        ? this.getSubProcessLabel(risk?.processus, String(risk.sousProcessus).trim())
+                        : '';
+                    const processOrSubProcess = selectedSubProcessLabel || processLabel;
+                    const tiersLabel = Array.isArray(risk?.tiers)
+                        ? risk.tiers
+                            .map(tier => this.getTierLabel(tier))
+                            .filter(Boolean)
+                            .join(', ')
+                        : '';
+                    const tooltipLines = [
+                        `${processOrSubProcess} • ${tiersLabel || 'Not defined'}`,
+                        displayText || 'Not defined'
+                    ];
+                    if (typeof risk.example === 'string' && risk.example.trim()) {
+                        tooltipLines.push(`Exemple : ${risk.example.trim()}`);
                     }
                     const formattedBrut = Number.isFinite(netInfo.brutScore)
                         ? netInfo.brutScore.toLocaleString('fr-FR', { maximumFractionDigits: 2 })
@@ -7649,12 +7625,15 @@ class RiskManagementSystem {
                     const formattedNet = Number.isFinite(netInfo.score)
                         ? netInfo.score.toLocaleString('fr-FR', { maximumFractionDigits: 2 })
                         : '0';
-                    tooltipSegments.push(`Gross ${formattedBrut} → Net ${formattedNet}`);
-                    tooltipSegments.push(`Reduction ${formatMitigationCoefficient(netInfo.coefficient)} (${netInfo.label})`);
-                    tooltipSegments.push(`Gross level: ${severityLabelMap[brutLevel] || brutLevel}`);
+                    tooltipLines.push(`Gross ${formattedBrut} → Net ${formattedNet}`);
+                    tooltipLines.push(`Reduction ${formatMitigationCoefficient(netInfo.coefficient)} (${netInfo.label})`);
+                    tooltipLines.push(`Gross level: ${severityLabelMap[brutLevel] || brutLevel}`);
 
-                    point.title = tooltipSegments.join(' • ');
-                    point.textContent = String(rankingByView[viewKey].get(risk.id) || '');
+                    point.title = tooltipLines.join('\n');
+                    point.textContent = String(risk.id ?? '');
+                    if (idsEqual(this.selectedRiskId, risk.id)) {
+                        point.classList.add('active-point');
+                    }
                     point.setAttribute('aria-label', `${config.label} : ${displayText}`);
                     point.onclick = () => this.selectRisk(risk.id);
                     grid.appendChild(point);
@@ -7677,15 +7656,11 @@ class RiskManagementSystem {
                     return;
                 }
 
-                let coefficient = 1;
                 let effectiveProb = baseProb;
 
                 if (viewKey === 'brut') {
                     if (typeof getRiskEffectiveBrutProbability === 'function') {
                         effectiveProb = getRiskEffectiveBrutProbability(risk);
-                    }
-                    if (typeof getRiskAggravatingCoefficient === 'function') {
-                        coefficient = getRiskAggravatingCoefficient(risk);
                     }
                 }
 
@@ -7706,36 +7681,34 @@ class RiskManagementSystem {
 
                 const point = document.createElement('div');
                 point.className = `risk-point ${viewKey}`;
-                if (viewKey === 'brut') {
-                    const aggravatingGroups = (typeof AGGRAVATING_FACTOR_GROUPS === 'object' && AGGRAVATING_FACTOR_GROUPS)
-                        ? AGGRAVATING_FACTOR_GROUPS
-                        : {};
-                    const criticalCoef = Number(aggravatingGroups?.group1?.coefficient) || 1.4;
-                    const majorCoef = Number(aggravatingGroups?.group2?.coefficient) || 1.2;
-                    const epsilon = 0.0001;
-                    if (coefficient >= criticalCoef - epsilon) {
-                        point.classList.add('aggravating-critical');
-                    } else if (coefficient >= majorCoef - epsilon) {
-                        point.classList.add('aggravating-major');
-                    }
-                }
                 point.dataset.riskId = risk.id;
-                const displayText = (typeof risk.example === 'string' && risk.example.trim())
-                    ? risk.example.trim()
-                    : (risk.description || '');
-                const tooltipSegments = [];
-                if (displayText) {
-                    tooltipSegments.push(displayText);
-                }
-                if (coefficient > 1) {
-                    const formattedCoef = typeof formatCoefficient === 'function'
-                        ? formatCoefficient(coefficient)
-                        : (Math.round(coefficient * 10) / 10).toString().replace('.', ',');
-                    tooltipSegments.push(`Coef ${formattedCoef}`);
+                const displayText = risk.description || '';
+                const processLabel = risk?.processus && String(risk.processus).trim()
+                    ? this.getProcessLabel(String(risk.processus).trim())
+                    : 'Not defined';
+                const selectedSubProcessLabel = risk?.sousProcessus && String(risk.sousProcessus).trim()
+                    ? this.getSubProcessLabel(risk?.processus, String(risk.sousProcessus).trim())
+                    : '';
+                const processOrSubProcess = selectedSubProcessLabel || processLabel;
+                const tiersLabel = Array.isArray(risk?.tiers)
+                    ? risk.tiers
+                        .map(tier => this.getTierLabel(tier))
+                        .filter(Boolean)
+                        .join(', ')
+                    : '';
+                const tooltipLines = [
+                    `${processOrSubProcess} • ${tiersLabel || 'Not defined'}`,
+                    displayText || 'Not defined'
+                ];
+                if (typeof risk.example === 'string' && risk.example.trim()) {
+                    tooltipLines.push(`Exemple : ${risk.example.trim()}`);
                 }
 
-                point.title = tooltipSegments.join(' • ');
-                point.textContent = String(rankingByView[viewKey].get(risk.id) || '');
+                point.title = tooltipLines.join('\n');
+                point.textContent = String(risk.id ?? '');
+                if (idsEqual(this.selectedRiskId, risk.id)) {
+                    point.classList.add('active-point');
+                }
                 point.setAttribute('aria-label', `${config.label} : ${displayText}`);
                 point.onclick = () => this.selectRisk(risk.id);
                 if (viewKey === 'brut' && window.matrixEditMode) {
@@ -7856,10 +7829,15 @@ class RiskManagementSystem {
         const targetId = String(riskId);
         const risk = this.risks.find(r => idsEqual(r.id, targetId));
         if (!risk) return;
+        this.selectedRiskId = risk.id;
 
         const activeView = this.currentView === 'net' ? 'net' : 'brut';
         const activeViewContainer = document.querySelector(`.matrix-container[data-view="${activeView}"]`);
         const riskItems = Array.from(document.querySelectorAll('.risk-item[data-risk-id]'));
+        document.querySelectorAll('.risk-point').forEach(point => {
+            const isTarget = idsEqual(point.dataset?.riskId, targetId);
+            point.classList.toggle('active-point', isTarget);
+        });
 
         // Update selected state in details panel (prioritize the active matrix view list)
         let selectedElement = null;
@@ -8068,7 +8046,7 @@ class RiskManagementSystem {
                     ? score.toLocaleString('fr-FR', { maximumFractionDigits: 2 })
                     : '0';
 
-                const metaDetails = `Processus: ${processOrSubProcess} • Tiers: ${tiersLabel || 'Not defined'} • Type: ${typeLabel}`;
+                const metaDetails = `#${risk.id} • Processus: ${processOrSubProcess} • Tiers: ${tiersLabel || 'Not defined'} • Type: ${typeLabel}`;
 
                 return `
                     <div class="risk-item" data-risk-id="${risk.id}" onclick='rms.selectRisk(${JSON.stringify(risk.id)})'>
