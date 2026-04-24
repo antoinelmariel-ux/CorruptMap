@@ -298,10 +298,10 @@ const MITIGATION_EFFECTIVENESS_ORDER = Object.freeze([
 ]);
 
 const MITIGATION_EFFECTIVENESS_SCALE = Object.freeze({
-    inefficace: { label: 'Ineffective', coefficient: 0 },
-    insuffisant: { label: 'Insufficient', coefficient: 0.25 },
+    inefficace: { label: 'Ineffective', coefficient: 1 },
+    insuffisant: { label: 'Insufficient', coefficient: 0.75 },
     ameliorable: { label: 'Room for improvement', coefficient: 0.5 },
-    efficace: { label: 'Effective', coefficient: 0.75 }
+    efficace: { label: 'Effective', coefficient: 0.25 }
 });
 
 const DEFAULT_MITIGATION_EFFECTIVENESS = 'insuffisant';
@@ -365,15 +365,15 @@ function getRiskMitigationCoefficient(input) {
     const level = typeof input === 'string' ? normalizeMitigationEffectiveness(input) : getRiskMitigationEffectiveness(input);
     const entry = MITIGATION_EFFECTIVENESS_SCALE[level];
     const coefficient = entry?.coefficient;
-    return Number.isFinite(coefficient) ? coefficient : 0;
+    return Number.isFinite(coefficient) ? coefficient : 1;
 }
 
-function clampMitigationReduction(value) {
+function clampMitigationFactor(value) {
     const numeric = Number(value);
     if (!Number.isFinite(numeric)) {
-        return 0;
+        return 1;
     }
-    return Math.min(Math.max(numeric, 0), 1);
+    return Math.min(Math.max(numeric, 0.25), 1);
 }
 
 function getMitigationColumnFromLevel(level) {
@@ -412,8 +412,8 @@ function getRiskNetScore(risk) {
     const brutScore = typeof getRiskBrutScore === 'function'
         ? getRiskBrutScore(risk)
         : (Number(risk?.probBrut) || 0) * (Number(risk?.impactBrut) || 0) * aggravatingCoefficient;
-    const mitigationReduction = clampMitigationReduction(getRiskMitigationCoefficient(risk));
-    return brutScore * (1 - mitigationReduction);
+    const mitigationFactor = clampMitigationFactor(getRiskMitigationCoefficient(risk));
+    return brutScore * mitigationFactor;
 }
 
 function getRiskSeverityFromScore(score) {
@@ -436,7 +436,7 @@ function getRiskNetInfo(risk) {
         ? getRiskAggravatingCoefficient(risk)
         : 1;
     const rawMitigationCoefficient = getRiskMitigationCoefficient(risk);
-    const mitigationCoefficient = clampMitigationReduction(rawMitigationCoefficient);
+    const mitigationCoefficient = clampMitigationFactor(rawMitigationCoefficient);
     const brutScore = typeof getRiskBrutScore === 'function'
         ? getRiskBrutScore(risk)
         : (Number(risk?.probBrut) || 0) * (Number(risk?.impactBrut) || 0) * aggravatingCoefficient;
@@ -444,11 +444,11 @@ function getRiskNetInfo(risk) {
         ? aggravatingCoefficient
         : 1;
     const baseBrutScore = brutScore / safeAggravatingCoefficient;
-    const score = brutScore * (1 - mitigationCoefficient);
+    const score = brutScore * mitigationCoefficient;
     const level = getRiskSeverityFromScore(score);
     const effectiveness = getRiskMitigationEffectiveness(risk);
     const label = MITIGATION_EFFECTIVENESS_SCALE[effectiveness]?.label || effectiveness;
-    const reduction = Math.round(mitigationCoefficient * 100);
+    const reduction = Math.round((1 - mitigationCoefficient) * 100);
 
     return {
         score,
@@ -464,8 +464,8 @@ function getRiskNetInfo(risk) {
 }
 
 function formatMitigationCoefficient(value) {
-    const safe = clampMitigationReduction(value);
-    return `${Math.round(safe * 100)}%`;
+    const safe = clampMitigationFactor(value);
+    return safe.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 window.MITIGATION_EFFECTIVENESS_ORDER = MITIGATION_EFFECTIVENESS_ORDER;
@@ -480,7 +480,8 @@ window.getRiskSeverityFromScore = getRiskSeverityFromScore;
 window.getRiskBrutLevel = getRiskBrutLevel;
 window.getRiskNetInfo = getRiskNetInfo;
 window.formatMitigationCoefficient = formatMitigationCoefficient;
-window.clampMitigationReduction = clampMitigationReduction;
+window.clampMitigationFactor = clampMitigationFactor;
+window.clampMitigationReduction = clampMitigationFactor;
 window.getMitigationColumnFromLevel = getMitigationColumnFromLevel;
 window.getMitigationLevelFromColumn = getMitigationLevelFromColumn;
 window.getNetImpactValueFromSeverity = getNetImpactValueFromSeverity;

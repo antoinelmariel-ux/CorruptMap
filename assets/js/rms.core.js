@@ -7502,10 +7502,10 @@ class RiskManagementSystem {
             const mitigationOptions = typeof getMitigationEffectivenessOptions === 'function'
                 ? getMitigationEffectivenessOptions()
                 : [
-                    { value: 'efficace', label: 'Effective', coefficient: 0.75 },
+                    { value: 'efficace', label: 'Effective', coefficient: 0.25 },
                     { value: 'ameliorable', label: 'Room for improvement', coefficient: 0.5 },
-                    { value: 'insuffisant', label: 'Insufficient', coefficient: 0.25 },
-                    { value: 'inefficace', label: 'Ineffective', coefficient: 0 }
+                    { value: 'insuffisant', label: 'Insufficient', coefficient: 0.75 },
+                    { value: 'inefficace', label: 'Ineffective', coefficient: 1 }
                 ];
 
             const brutLevels = [
@@ -7534,9 +7534,8 @@ class RiskManagementSystem {
 
                 for (let subRow = 0; subRow < subCellCount; subRow++) {
                     mitigationOptions.forEach((option) => {
-                        const coefficient = Number(option.coefficient) || 0;
-                        const mitigationReduction = Math.min(Math.max(coefficient, 0), 1);
-                        const remainingFactor = 1 - mitigationReduction;
+                        const coefficient = Number(option.coefficient) || 1;
+                        const remainingFactor = Math.min(Math.max(coefficient, 0.25), 1);
                         const grossBandMax = level.max - ((levelSpan / subCellCount) * subRow);
                         const grossBandMin = level.max - ((levelSpan / subCellCount) * (subRow + 1));
                         const netBandMin = grossBandMin * remainingFactor;
@@ -7588,10 +7587,10 @@ class RiskManagementSystem {
         const mitigationOptions = typeof getMitigationEffectivenessOptions === 'function'
             ? getMitigationEffectivenessOptions()
             : [
-                { value: 'efficace', label: 'Effective', coefficient: 0.75 },
+                { value: 'efficace', label: 'Effective', coefficient: 0.25 },
                 { value: 'ameliorable', label: 'Room for improvement', coefficient: 0.5 },
-                { value: 'insuffisant', label: 'Insufficient', coefficient: 0.25 },
-                { value: 'inefficace', label: 'Ineffective', coefficient: 0 }
+                { value: 'insuffisant', label: 'Insufficient', coefficient: 0.75 },
+                { value: 'inefficace', label: 'Ineffective', coefficient: 1 }
             ];
 
         const viewConfigs = {
@@ -7658,7 +7657,7 @@ class RiskManagementSystem {
                 if (config.mode === 'net') {
                     const netInfo = typeof getRiskNetInfo === 'function'
                         ? getRiskNetInfo(risk)
-                        : { score: 0, brutScore: 0, coefficient: 0, effectiveness: 'inefficace', label: 'Ineffective' };
+                        : { score: 0, brutScore: 0, coefficient: 1, effectiveness: 'inefficace', label: 'Ineffective' };
                     const brutLevel = typeof getRiskBrutLevel === 'function'
                         ? getRiskBrutLevel(risk)
                         : (typeof getRiskSeverityFromScore === 'function'
@@ -7684,8 +7683,8 @@ class RiskManagementSystem {
                     const normalizedBrut = Math.max(0, Math.min(0.999, (brutScore - levelRange.min) / rangeSize));
 
                     const selectedOption = mitigationOptions.find(option => option.value === netInfo.effectiveness);
-                    const selectedCoefficient = Math.max(0, Math.min(1, Number(selectedOption?.coefficient) || 0));
-                    const remainingFactor = 1 - selectedCoefficient;
+                    const selectedCoefficient = Math.max(0.25, Math.min(1, Number(selectedOption?.coefficient) || 1));
+                    const remainingFactor = selectedCoefficient;
                     const netMin = levelRange.min * remainingFactor;
                     const netMax = levelRange.max * remainingFactor;
                     const netRange = Math.max(0.01, netMax - netMin);
@@ -7741,7 +7740,7 @@ class RiskManagementSystem {
                         ? netInfo.score.toLocaleString('fr-FR', { maximumFractionDigits: 2 })
                         : '0';
                     tooltipLines.push(`Gross ${formattedBrut} → Net ${formattedNet}`);
-                    tooltipLines.push(`Reduction ${formatMitigationCoefficient(netInfo.coefficient)} (${netInfo.label})`);
+                    tooltipLines.push(`Coefficient ${formatMitigationCoefficient(netInfo.coefficient)} (${netInfo.label})`);
                     tooltipLines.push(`Gross level: ${severityLabelMap[brutLevel] || brutLevel}`);
 
                     point.title = tooltipLines.join('\n');
@@ -8077,7 +8076,7 @@ class RiskManagementSystem {
                 if (mode === 'net') {
                     const netInfo = typeof getRiskNetInfo === 'function'
                         ? getRiskNetInfo(entry)
-                        : { score: 0, brutScore: 0, coefficient: 0, label: 'Ineffective', effectiveness: 'inefficace' };
+                        : { score: 0, brutScore: 0, coefficient: 1, label: 'Ineffective', effectiveness: 'inefficace' };
                     return { risk: entry, score: netInfo.score, brutScore: netInfo.brutScore, coefficient: netInfo.coefficient, label: netInfo.label, effectiveness: netInfo.effectiveness };
                 }
 
@@ -8509,7 +8508,7 @@ class RiskManagementSystem {
         const enrichedRisks = filteredRisks.map(risk => {
             const netInfo = typeof getRiskNetInfo === 'function'
                 ? getRiskNetInfo(risk)
-                : { score: 0, brutScore: 0, coefficient: 0, label: 'Ineffective', reduction: 0 };
+                : { score: 0, brutScore: 0, coefficient: 1, label: 'Ineffective', reduction: 0 };
             return { risk, score: netInfo.score, brutScore: netInfo.brutScore, coefficient: netInfo.coefficient, label: netInfo.label, reduction: netInfo.reduction };
         }).filter(entry => Number.isFinite(entry.score));
 
@@ -8537,7 +8536,7 @@ class RiskManagementSystem {
                     sousProcessus: subProcessLabel,
                     score: Number.isFinite(entry.score) ? entry.score : 0,
                     brutScore: Number.isFinite(entry.brutScore) ? entry.brutScore : 0,
-                    reduction: Number.isFinite(entry.coefficient) ? Math.round(entry.coefficient * 100) : 0,
+                    reduction: Number.isFinite(entry.coefficient) ? Math.round((1 - entry.coefficient) * 100) : 0,
                     effectivenessLabel: entry.label || ''
                 };
             });
@@ -9252,7 +9251,7 @@ class RiskManagementSystem {
             const enrichedRisks = filteredRisks.map(risk => {
                 const netInfo = typeof getRiskNetInfo === 'function'
                     ? getRiskNetInfo(risk)
-                    : { score: 0, brutScore: 0, coefficient: 0, reduction: 0, label: 'Ineffective' };
+                    : { score: 0, brutScore: 0, coefficient: 1, reduction: 0, label: 'Ineffective' };
                 return { risk, score: netInfo.score, brutScore: netInfo.brutScore, coefficient: netInfo.coefficient, reduction: netInfo.reduction, label: netInfo.label };
             }).filter(entry => Number.isFinite(entry.score));
 
@@ -9673,7 +9672,7 @@ class RiskManagementSystem {
                 : normalizedBrut;
             const netInfo = typeof getRiskNetInfo === 'function'
                 ? getRiskNetInfo(risk)
-                : { score: (Number(risk?.probNet) || 0) * (Number(risk?.impactNet) || 0), coefficient: 0, reduction: 0, label: '' };
+                : { score: (Number(risk?.probNet) || 0) * (Number(risk?.impactNet) || 0), coefficient: 1, reduction: 0, label: '' };
             const riskStatusValue = this.normalizeStatusValue(
                 'risk',
                 risk?.statut,
@@ -9700,7 +9699,7 @@ class RiskManagementSystem {
                 : 'N/A';
             const reductionPercent = Number.isFinite(netInfo.reduction)
                 ? netInfo.reduction
-                : Math.round((netInfo.coefficient || 0) * 100);
+                : Math.round((1 - (netInfo.coefficient || 1)) * 100);
             const reductionLabel = `${reductionPercent}%`;
             const effectivenessLabel = netInfo.label ? ` (${netInfo.label})` : '';
 
