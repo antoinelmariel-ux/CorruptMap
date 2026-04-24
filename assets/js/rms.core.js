@@ -7480,38 +7480,51 @@ class RiskManagementSystem {
             brutLevels.forEach(level => {
                 const levelSpan = level.max - level.min;
 
-                for (let subRow = 0; subRow < subCellCount; subRow++) {
-                    mitigationOptions.forEach((option) => {
-                        const coefficient = Number(option.coefficient) || 0;
-                        const mitigationReduction = Math.min(Math.max(coefficient, 0), 1);
-                        const remainingFactor = 1 - mitigationReduction;
+                mitigationOptions.forEach((option) => {
+                    const coefficient = Number(option.coefficient) || 0;
+                    const mitigationReduction = Math.min(Math.max(coefficient, 0), 1);
+                    const remainingFactor = 1 - mitigationReduction;
+                    const subgroupLevels = [];
+
+                    for (let subRow = 0; subRow < subCellCount; subRow++) {
+                        subgroupLevels[subRow] = [];
                         const grossBandMax = level.max - ((levelSpan / subCellCount) * subRow);
                         const grossBandMin = level.max - ((levelSpan / subCellCount) * (subRow + 1));
                         const netBandMin = grossBandMin * remainingFactor;
                         const netBandMax = grossBandMax * remainingFactor;
 
                         for (let subCol = 0; subCol < subCellCount; subCol++) {
+                            const withinBandFactor = subCol === 0 ? 0.25 : 0.75;
+                            const representativeScore = netBandMin + ((netBandMax - netBandMin) * withinBandFactor);
+                            subgroupLevels[subRow][subCol] = getSeverityClassFromScore(representativeScore);
+                        }
+                    }
+
+                    for (let subRow = 0; subRow < subCellCount; subRow++) {
+                        for (let subCol = 0; subCol < subCellCount; subCol++) {
                             const cell = document.createElement('div');
+                            const primaryLevel = subgroupLevels[subRow][subCol];
                             cell.className = 'matrix-cell';
                             cell.dataset.brutLevel = level.value;
                             cell.dataset.effectiveness = option.value;
                             cell.dataset.subRow = String(subRow);
                             cell.dataset.subCol = String(subCol);
-
-                            const withinBandFactor = subCol === 0 ? 0.25 : 0.75;
-                            const representativeScore = netBandMin + ((netBandMax - netBandMin) * withinBandFactor);
-                            const primaryLevel = getSeverityClassFromScore(representativeScore);
                             cell.classList.add(primaryLevel);
 
-                            if (subCol === 0) cell.classList.add('merged-right');
-                            if (subCol === 1) cell.classList.add('merged-left');
-                            if (subRow === 0) cell.classList.add('merged-bottom');
-                            if (subRow === 1) cell.classList.add('merged-top');
+                            const leftNeighbor = subCol > 0 ? subgroupLevels[subRow][subCol - 1] : null;
+                            const rightNeighbor = subCol < subCellCount - 1 ? subgroupLevels[subRow][subCol + 1] : null;
+                            const topNeighbor = subRow > 0 ? subgroupLevels[subRow - 1][subCol] : null;
+                            const bottomNeighbor = subRow < subCellCount - 1 ? subgroupLevels[subRow + 1][subCol] : null;
+
+                            if (leftNeighbor && leftNeighbor === primaryLevel) cell.classList.add('merged-left');
+                            if (rightNeighbor && rightNeighbor === primaryLevel) cell.classList.add('merged-right');
+                            if (topNeighbor && topNeighbor === primaryLevel) cell.classList.add('merged-top');
+                            if (bottomNeighbor && bottomNeighbor === primaryLevel) cell.classList.add('merged-bottom');
 
                             netGrid.appendChild(cell);
                         }
-                    });
-                }
+                    }
+                });
             });
             const colLabels = document.getElementById('matrixNetColLabels');
             if (colLabels) {
