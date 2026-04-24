@@ -40,10 +40,10 @@ function ensureNetMitigationOptions() {
     netMitigationOptions = typeof getMitigationEffectivenessOptions === 'function'
         ? getMitigationEffectivenessOptions()
         : [
-            { value: 'efficace', label: 'Effective', coefficient: 0.75 },
+            { value: 'efficace', label: 'Effective', coefficient: 0.25 },
             { value: 'ameliorable', label: 'Room for improvement', coefficient: 0.5 },
-            { value: 'insuffisant', label: 'Insufficient', coefficient: 0.25 },
-            { value: 'inefficace', label: 'Ineffective', coefficient: 0 }
+            { value: 'insuffisant', label: 'Insufficient', coefficient: 0.75 },
+            { value: 'inefficace', label: 'Ineffective', coefficient: 1 }
         ];
 
     return netMitigationOptions;
@@ -78,8 +78,10 @@ function updateNetSliderUI(probValue) {
     if (option) {
         const percentLabel = document.getElementById('netMitigationPercentLabel');
         if (percentLabel) {
-            const percent = Math.round((Number(option.coefficient) || 0) * 100);
-            percentLabel.textContent = `Reduction ${percent}%`;
+            const coefficientLabel = typeof formatMitigationCoefficient === 'function'
+                ? formatMitigationCoefficient(option.coefficient)
+                : (Number(option.coefficient) || 1).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            percentLabel.textContent = `Coefficient ${coefficientLabel}`;
         }
     }
 
@@ -127,13 +129,15 @@ function initNetMitigationSlider() {
             mark.dataset.edge = 'end';
         }
         mark.dataset.value = option.value;
-        const percent = Math.round((Number(option.coefficient) || 0) * 100);
+        const coefficientLabel = typeof formatMitigationCoefficient === 'function'
+            ? formatMitigationCoefficient(option.coefficient)
+            : (Number(option.coefficient) || 1).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'net-slider-mark-button';
         const label = option.label || option.value;
-        button.innerHTML = `<span>${label}</span><span class="net-slider-mark-sub">Reduction ${percent}%</span>`;
-        button.setAttribute('aria-label', `${label} – reduction ${percent}%`);
+        button.innerHTML = `<span>${label}</span><span class="net-slider-mark-sub">Coefficient ${coefficientLabel}</span>`;
+        button.setAttribute('aria-label', `${label} – coefficient ${coefficientLabel}`);
         button.setAttribute('aria-pressed', 'false');
         const targetValue = index + 1;
         button.addEventListener('click', () => applySliderValue(targetValue));
@@ -276,13 +280,13 @@ function calculateScore(type) {
 
         const mitigationCoefficient = typeof getRiskMitigationCoefficient === 'function'
             ? getRiskMitigationCoefficient(mitigationLevel)
-            : 0;
+            : 1;
 
-        coefficient = typeof clampMitigationReduction === 'function'
-            ? clampMitigationReduction(mitigationCoefficient)
-            : (Number.isFinite(mitigationCoefficient) ? Math.min(Math.max(mitigationCoefficient, 0), 1) : 0);
+        coefficient = typeof clampMitigationFactor === 'function'
+            ? clampMitigationFactor(mitigationCoefficient)
+            : (Number.isFinite(mitigationCoefficient) ? Math.min(Math.max(mitigationCoefficient, 0.25), 1) : 1);
         adjustedProb = brutScoreReference;
-        rawScore = brutScoreReference * (1 - coefficient);
+        rawScore = brutScoreReference * coefficient;
 
         const severity = typeof getRiskSeverityFromScore === 'function'
             ? getRiskSeverityFromScore(brutScoreReference)
@@ -323,10 +327,10 @@ function calculateScore(type) {
             const brutLabel = Number.isFinite(brutScoreReference)
                 ? brutScoreReference.toLocaleString('fr-FR', { maximumFractionDigits: 2 })
                 : '0';
-            const reductionLabel = typeof formatMitigationCoefficient === 'function'
+            const mitigationLabel = typeof formatMitigationCoefficient === 'function'
                 ? formatMitigationCoefficient(coefficient)
-                : `${Math.round(coefficient * 100)}%`;
-            coordElement.textContent = `Gross ${brutLabel} × Reduction ${reductionLabel}`;
+                : coefficient.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            coordElement.textContent = `Gross ${brutLabel} × Coefficient ${mitigationLabel}`;
         } else {
             coordElement.textContent = `P${prob} × I${impact}`;
         }
