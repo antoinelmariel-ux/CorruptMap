@@ -1087,7 +1087,11 @@ class RiskManagementSystem {
 
         const normalized = { ...risk };
         const normalizeMultiValues = (values) => {
-            const source = Array.isArray(values) ? values : [];
+            const source = Array.isArray(values)
+                ? values
+                : (typeof values === 'string'
+                    ? values.split(/[;,|]/).map(item => item.trim()).filter(Boolean)
+                    : []);
             const seen = new Set();
             return source.reduce((acc, item) => {
                 const value = typeof item === 'string' ? item.trim() : (item != null ? String(item).trim() : '');
@@ -1119,6 +1123,7 @@ class RiskManagementSystem {
         normalized.example = typeof risk?.example === 'string' ? risk.example.trim() : '';
         normalized.avantagesIndus = normalizeMultiValues(risk?.avantagesIndus);
         normalized.avantagesAttendus = normalizeMultiValues(risk?.avantagesAttendus);
+        normalized.tiers = normalizeMultiValues(risk?.tiers);
 
         const controlAssignments = Array.isArray(risk?.controlAssignments) ? risk.controlAssignments : [];
         normalized.controlAssignments = controlAssignments
@@ -11853,6 +11858,27 @@ class RiskManagementSystem {
         if (!risk) return;
 
         currentEditingRiskId = risk.id;
+        const normalizeSelectionValues = (values, fallback = '') => {
+            if (Array.isArray(values)) {
+                return values
+                    .map(item => (typeof item === 'string' ? item.trim() : (item != null ? String(item).trim() : '')))
+                    .filter(Boolean);
+            }
+            if (typeof values === 'string') {
+                const raw = values.trim();
+                if (!raw) {
+                    return [];
+                }
+                if (/[;,|]/.test(raw)) {
+                    return raw.split(/[;,|]/).map(item => item.trim()).filter(Boolean);
+                }
+                return [raw];
+            }
+            if (fallback != null && String(fallback).trim()) {
+                return [String(fallback).trim()];
+            }
+            return [];
+        };
 
         const form = document.getElementById('riskForm');
         if (form) {
@@ -11860,13 +11886,18 @@ class RiskManagementSystem {
             const processSelect = document.getElementById('processus');
             const subProcessSelect = document.getElementById('sousProcessus');
             const corruptionTypeSelect = document.getElementById('typeCorruption');
-            const processValues = Array.isArray(risk.processusAssocies) ? risk.processusAssocies : (risk.processus ? [risk.processus] : []);
-            const subProcessValues = Array.isArray(risk.sousProcessusAssocies) ? risk.sousProcessusAssocies : (risk.sousProcessus ? [risk.sousProcessus] : []);
-            const corruptionTypes = Array.isArray(risk.typesCorruption) ? risk.typesCorruption : (risk.typeCorruption ? [risk.typeCorruption] : []);
+            const processValues = normalizeSelectionValues(risk.processusAssocies, risk.processus);
+            const subProcessValues = normalizeSelectionValues(risk.sousProcessusAssocies, risk.sousProcessus);
+            const corruptionTypes = normalizeSelectionValues(risk.typesCorruption, risk.typeCorruption);
+            const tiersValues = normalizeSelectionValues(risk.tiers);
+            const entitiesValues = normalizeSelectionValues(risk.paysExposes);
             if (processSelect) {
                 Array.from(processSelect.options).forEach(opt => {
                     opt.selected = processValues.includes(opt.value);
                 });
+                if (typeof syncRiskMultiSelectChipsFromSelect === 'function') {
+                    syncRiskMultiSelectChipsFromSelect('processus');
+                }
             }
             this.updateSousProcessusOptions();
             if (subProcessSelect) {
@@ -11881,6 +11912,9 @@ class RiskManagementSystem {
                 Array.from(corruptionTypeSelect.options).forEach(opt => {
                     opt.selected = corruptionTypes.includes(opt.value);
                 });
+                if (typeof syncRiskMultiSelectChipsFromSelect === 'function') {
+                    syncRiskMultiSelectChipsFromSelect('typeCorruption');
+                }
             }
             const statutSelect = document.getElementById('statut');
             if (statutSelect) {
@@ -11903,18 +11937,24 @@ class RiskManagementSystem {
 
             const tiersSelect = document.getElementById('tiers');
             Array.from(tiersSelect.options).forEach(opt => {
-                opt.selected = (risk.tiers || []).includes(opt.value);
+                opt.selected = tiersValues.includes(opt.value);
             });
+            if (typeof syncRiskMultiSelectChipsFromSelect === 'function') {
+                syncRiskMultiSelectChipsFromSelect('tiers');
+            }
 
             const countriesSelect = document.getElementById('riskCountries');
             if (countriesSelect) {
                 const availableValues = Array.from(countriesSelect.options).map(opt => opt.value);
-                const preferredCountries = Array.isArray(risk.paysExposes) && risk.paysExposes.length
-                    ? risk.paysExposes
+                const preferredCountries = entitiesValues.length
+                    ? entitiesValues
                     : availableValues;
                 Array.from(countriesSelect.options).forEach(opt => {
                     opt.selected = preferredCountries.includes(opt.value);
                 });
+                if (typeof syncRiskCountryCheckboxesFromSelect === 'function') {
+                    syncRiskCountryCheckboxesFromSelect();
+                }
             }
 
             document.getElementById('description').value = risk.description || '';
