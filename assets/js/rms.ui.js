@@ -1377,7 +1377,7 @@ function renderControlSelectionList() {
         const controlName = ctrl?.name || 'Unnamed';
         return `
             <div class="risk-list-item">
-              <input type="checkbox" id="control-${ctrl.id}" ${isSelected ? 'checked' : ''} onchange="toggleControlSelection(${ctrl.id})">
+              <input type="checkbox" id="control-${ctrl.id}" ${isSelected ? 'checked' : ''} onchange='toggleControlSelection(${JSON.stringify(ctrl.id)})'>
               <div class="risk-item-info">
                 <div class="risk-item-title">#${ctrl.id} - ${controlName}</div>
                 <div class="risk-item-meta">Type: ${typeLabel || 'Undefined'} | Origin: ${originLabel || 'Undefined'} | Owner: ${ownerLabel || 'Undefined'}</div>
@@ -1418,7 +1418,7 @@ function closeControlSelector() {
 window.closeControlSelector = closeControlSelector;
 
 function toggleControlSelection(controlId) {
-    const index = selectedControlsForRisk.indexOf(controlId);
+    const index = selectedControlsForRisk.findIndex(id => idsEqual(id, controlId));
     const key = String(controlId);
     const focusedBenefit = currentBenefitFocusForControlSelector;
 
@@ -1438,7 +1438,7 @@ function toggleControlSelection(controlId) {
         if (hasFocusedBenefit) {
             entry.avantagesIndus = entry.avantagesIndus.filter(label => label !== focusedBenefit);
             if (!entry.transverse && entry.avantagesIndus.length === 0) {
-                selectedControlsForRisk = selectedControlsForRisk.filter(id => id !== controlId);
+                selectedControlsForRisk = selectedControlsForRisk.filter(id => !idsEqual(id, controlId));
                 delete controlAssignmentsForRisk[key];
             }
         } else {
@@ -1475,9 +1475,9 @@ function updateSelectedControlsDisplay() {
     const transverseControls = selectedControlsForRisk.map(id => {
         const assignment = controlAssignmentsForRisk[String(id)];
         if (!assignment?.transverse) return null;
-        const ctrl = rms.controls.find(c => c.id === id);
+        const ctrl = rms.controls.find(c => idsEqual(c.id, id));
         if (!ctrl) return null;
-        return `<span class="transverse-control-chip">#${id} - ${ctrl.name || 'Unnamed'} <button type="button" class="transverse-control-remove-btn" onclick="removeControlFromSelection(${id})" aria-label="Remove cross-functional control #${id}">×</button></span>`;
+        return `<span class="transverse-control-chip">#${id} - ${ctrl.name || 'Unnamed'} <button type="button" class="transverse-control-remove-btn" onclick='removeControlFromSelection(${JSON.stringify(id)})' aria-label="Remove cross-functional control #${id}">×</button></span>`;
     }).filter(Boolean);
     const transverseSection = transverseControls.length
         ? `<div class="transverse-controls-section">
@@ -1491,7 +1491,7 @@ function updateSelectedControlsDisplay() {
 window.updateSelectedControlsDisplay = updateSelectedControlsDisplay;
 
 function removeControlFromSelection(controlId) {
-    selectedControlsForRisk = selectedControlsForRisk.filter(id => id !== controlId);
+    selectedControlsForRisk = selectedControlsForRisk.filter(id => !idsEqual(id, controlId));
     delete controlAssignmentsForRisk[String(controlId)];
     updateSelectedControlsDisplay();
     if (rms && typeof rms.markUnsavedChange === 'function') {
