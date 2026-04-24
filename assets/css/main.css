@@ -2053,8 +2053,13 @@ body.feedback-mode-paused .feedback-panel * {
     background: var(--surface-color);
     border-radius: var(--border-radius);
     box-shadow: 0 8px 24px rgba(15, 41, 51, 0.08);
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
     border: 1px solid var(--border-color);
+}
+
+#risksTable {
+    min-width: 1500px;
 }
 
 .table-header {
