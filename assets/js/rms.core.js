@@ -11880,6 +11880,9 @@ class RiskManagementSystem {
                 Array.from(processSelect.options).forEach(opt => {
                     opt.selected = processValues.includes(opt.value);
                 });
+                if (typeof syncRiskMultiSelectChipsFromSelect === 'function') {
+                    syncRiskMultiSelectChipsFromSelect('processus');
+                }
             }
             this.updateSousProcessusOptions();
             if (subProcessSelect) {
@@ -11894,6 +11897,9 @@ class RiskManagementSystem {
                 Array.from(corruptionTypeSelect.options).forEach(opt => {
                     opt.selected = corruptionTypes.includes(opt.value);
                 });
+                if (typeof syncRiskMultiSelectChipsFromSelect === 'function') {
+                    syncRiskMultiSelectChipsFromSelect('typeCorruption');
+                }
             }
             const statutSelect = document.getElementById('statut');
             if (statutSelect) {
@@ -11918,6 +11924,9 @@ class RiskManagementSystem {
             Array.from(tiersSelect.options).forEach(opt => {
                 opt.selected = (risk.tiers || []).includes(opt.value);
             });
+            if (typeof syncRiskMultiSelectChipsFromSelect === 'function') {
+                syncRiskMultiSelectChipsFromSelect('tiers');
+            }
 
             const countriesSelect = document.getElementById('riskCountries');
             if (countriesSelect) {
@@ -11928,6 +11937,9 @@ class RiskManagementSystem {
                 Array.from(countriesSelect.options).forEach(opt => {
                     opt.selected = preferredCountries.includes(opt.value);
                 });
+                if (typeof syncRiskCountryCheckboxesFromSelect === 'function') {
+                    syncRiskCountryCheckboxesFromSelect();
+                }
             }
 
             document.getElementById('description').value = risk.description || '';
