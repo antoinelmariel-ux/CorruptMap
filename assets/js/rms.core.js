@@ -140,7 +140,8 @@ class RiskManagementSystem {
             type: '',
             status: '',
             search: '',
-            entity: []
+            entity: [],
+            tiers: []
         };
         this.riskRegisterSort = {
             key: '',
@@ -2932,6 +2933,9 @@ class RiskManagementSystem {
         }
         this.renderRiskCountryColumns();
         this.renderMatrixEntityFilterChips();
+        if (typeof window !== 'undefined' && typeof window.renderRiskTierFilterOptions === 'function') {
+            window.renderRiskTierFilterOptions();
+        }
         fill('controlType', this.config.controlTypes, 'Select...');
         fill('controlFrequency', this.config.controlFrequencies, 'Select...');
         fill('controlMode', this.config.controlModes, 'Select...');
@@ -7807,13 +7811,17 @@ class RiskManagementSystem {
             type = '',
             status = '',
             search = '',
-            entity = []
+            entity = [],
+            tiers = []
         } = this.filters || {};
 
         const processFilter = String(process || '').toLowerCase();
         const searchFilter = String(search || '').toLowerCase();
         const entityFilters = Array.isArray(entity)
             ? entity.map(value => String(value || '').toLowerCase()).filter(Boolean)
+            : [];
+        const tiersFilters = Array.isArray(tiers)
+            ? tiers.map(value => String(value || '').toLowerCase()).filter(Boolean)
             : [];
 
         return sourceRisks.filter(risk => {
@@ -7868,6 +7876,16 @@ class RiskManagementSystem {
                     : [];
                 const hasEntity = entityFilters.some(value => riskEntities.includes(value));
                 if (!hasEntity) {
+                    return false;
+                }
+            }
+
+            if (tiersFilters.length) {
+                const riskTiers = Array.isArray(risk?.tiers)
+                    ? risk.tiers.map(value => String(value || '').toLowerCase()).filter(Boolean)
+                    : [];
+                const hasTier = tiersFilters.some(value => riskTiers.includes(value));
+                if (!hasTier) {
                     return false;
                 }
             }

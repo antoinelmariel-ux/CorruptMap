@@ -2230,6 +2230,114 @@ tbody tr:hover {
     color: var(--primary-color);
 }
 
+.tiers-header-cell {
+    position: relative;
+}
+
+.risk-tier-filter-header {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+}
+
+.risk-tier-filter-toggle {
+    border: 1px solid var(--border-color);
+    background: var(--surface-color);
+    color: var(--muted-text-color);
+    border-radius: 999px;
+    width: 24px;
+    height: 24px;
+    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.risk-tier-filter-toggle:hover,
+.risk-tier-filter-toggle[aria-expanded="true"] {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.risk-tier-filter-count {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    min-width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    background: var(--primary-color);
+    color: #fff;
+    font-size: 0.6rem;
+    line-height: 14px;
+    text-align: center;
+    padding: 0 3px;
+    display: none;
+}
+
+.risk-tier-filter-count.has-value {
+    display: inline-block;
+}
+
+.risk-tier-filter-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 280px;
+    max-height: 280px;
+    border: 1px solid var(--border-color);
+    background: var(--surface-color);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+    border-radius: 10px;
+    padding: 10px;
+    z-index: 20;
+}
+
+.risk-tier-filter-menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 0.75rem;
+    color: var(--muted-text-color);
+}
+
+.risk-tier-filter-clear {
+    border: none;
+    background: none;
+    color: var(--primary-color);
+    font-size: 0.75rem;
+    cursor: pointer;
+    padding: 0;
+}
+
+.risk-tier-filter-options {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.risk-tier-filter-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.78rem;
+    color: var(--text-color);
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.risk-tier-filter-option input {
+    margin: 0;
+}
+
 /* Modal amélioré */
 .modal {
     display: none;
