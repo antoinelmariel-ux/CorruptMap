@@ -1121,6 +1121,7 @@ class RiskManagementSystem {
         normalized.processus = normalized.processusAssocies[0] || '';
         normalized.sousProcessus = normalized.sousProcessusAssocies[0] || '';
         normalized.typeCorruption = normalized.typesCorruption[0] || '';
+        normalized.titre = typeof risk?.titre === 'string' ? risk.titre.trim() : '';
         normalized.example = typeof risk?.example === 'string' ? risk.example.trim() : '';
         normalized.avantagesIndus = normalizeMultiValues(risk?.avantagesIndus);
         normalized.avantagesAttendus = normalizeMultiValues(risk?.avantagesAttendus);
@@ -7712,7 +7713,8 @@ class RiskManagementSystem {
                     point.className = `risk-point ${viewKey}`;
                     point.dataset.riskId = risk.id;
 
-                    const displayText = risk.description || '';
+                    const displayTitle = risk.titre || risk.description || 'Not defined';
+                    const displayText = risk.description || 'Not defined';
                     const processLabel = risk?.processus && String(risk.processus).trim()
                         ? this.getProcessLabel(String(risk.processus).trim())
                         : 'Not defined';
@@ -7728,7 +7730,8 @@ class RiskManagementSystem {
                         : '';
                     const tooltipLines = [
                         `${processOrSubProcess} • ${tiersLabel || 'Not defined'}`,
-                        displayText || 'Not defined'
+                        `**${displayTitle}**`,
+                        displayText
                     ];
                     if (typeof risk.example === 'string' && risk.example.trim()) {
                         tooltipLines.push(`Exemple : ${risk.example.trim()}`);
@@ -7748,7 +7751,7 @@ class RiskManagementSystem {
                     if (idsEqual(this.selectedRiskId, risk.id)) {
                         point.classList.add('active-point');
                     }
-                    point.setAttribute('aria-label', `${config.label} : ${displayText}`);
+                    point.setAttribute('aria-label', `${config.label} : ${displayTitle}`);
                     point.onclick = () => this.selectRisk(risk.id);
                     grid.appendChild(point);
 
@@ -7796,7 +7799,8 @@ class RiskManagementSystem {
                 const point = document.createElement('div');
                 point.className = `risk-point ${viewKey}`;
                 point.dataset.riskId = risk.id;
-                const displayText = risk.description || '';
+                const displayTitle = risk.titre || risk.description || 'Not defined';
+                const displayText = risk.description || 'Not defined';
                 const processLabel = risk?.processus && String(risk.processus).trim()
                     ? this.getProcessLabel(String(risk.processus).trim())
                     : 'Not defined';
@@ -7812,7 +7816,8 @@ class RiskManagementSystem {
                     : '';
                 const tooltipLines = [
                     `${processOrSubProcess} • ${tiersLabel || 'Not defined'}`,
-                    displayText || 'Not defined'
+                    `**${displayTitle}**`,
+                    displayText
                 ];
                 if (typeof risk.example === 'string' && risk.example.trim()) {
                     tooltipLines.push(`Exemple : ${risk.example.trim()}`);
@@ -7823,7 +7828,7 @@ class RiskManagementSystem {
                 if (idsEqual(this.selectedRiskId, risk.id)) {
                     point.classList.add('active-point');
                 }
-                point.setAttribute('aria-label', `${config.label} : ${displayText}`);
+                point.setAttribute('aria-label', `${config.label} : ${displayTitle}`);
                 point.onclick = () => this.selectRisk(risk.id);
                 if (viewKey === 'brut' && window.matrixEditMode) {
                     point.draggable = true;
@@ -7901,13 +7906,14 @@ class RiskManagementSystem {
             }
 
             if (searchFilter) {
+                const title = risk?.titre != null ? String(risk.titre).toLowerCase() : '';
                 const description = risk?.description != null ? String(risk.description).toLowerCase() : '';
                 const idValue = risk?.id != null ? String(risk.id).toLowerCase() : '';
                 const tiersValues = Array.isArray(risk?.tiers)
                     ? risk.tiers.map(value => String(value || '').toLowerCase()).filter(Boolean)
                     : [];
                 const tiersText = tiersValues.join(' ');
-                if (!description.includes(searchFilter) && !idValue.includes(searchFilter) && !tiersText.includes(searchFilter)) {
+                if (!title.includes(searchFilter) && !description.includes(searchFilter) && !idValue.includes(searchFilter) && !tiersText.includes(searchFilter)) {
                     return false;
                 }
             }
@@ -8097,7 +8103,9 @@ class RiskManagementSystem {
                     if ((b.impact || 0) !== (a.impact || 0)) return (b.impact || 0) - (a.impact || 0);
                 }
 
-                const descComparison = (a.risk.description || '').localeCompare(b.risk.description || '', undefined, { sensitivity: 'base' });
+                const aTitle = a.risk.titre || a.risk.description || '';
+                const bTitle = b.risk.titre || b.risk.description || '';
+                const descComparison = aTitle.localeCompare(bTitle, undefined, { sensitivity: 'base' });
                 if (descComparison !== 0) return descComparison;
 
                 return String(a.risk.id).localeCompare(String(b.risk.id), undefined, { numeric: true, sensitivity: 'base' });
@@ -8184,14 +8192,17 @@ class RiskManagementSystem {
                 return `
                     <div class="risk-item" data-risk-id="${risk.id}" onclick='rms.selectRisk(${JSON.stringify(risk.id)})'>
                         <div class="risk-item-header">
-                            <span class="risk-item-title">${risk.description}</span>
+                            <div class="risk-item-title-wrap">
+                                <div class="risk-item-title">${escapeHtml(risk.titre || risk.description || 'Untitled')}</div>
+                                <div class="risk-item-description">${escapeHtml(risk.description || '—')}</div>
+                            </div>
                             <div class="risk-item-actions">
                                 <span class="risk-item-score ${scoreClass}">${formattedScore}</span>
                                 <button
                                     type="button"
                                     class="risk-item-edit-btn"
                                     title="Éditer le risque"
-                                    aria-label="Éditer le risque ${risk.description}"
+                                    aria-label="Éditer le risque ${escapeHtml(risk.titre || risk.description || 'Untitled')}"
                                     onclick='event.stopPropagation(); rms.editRisk(${JSON.stringify(risk.id)})'
                                 >✏️</button>
                             </div>
@@ -9740,7 +9751,10 @@ class RiskManagementSystem {
                 html: `
                 <tr>
                     <td>#${risk.id}</td>
-                    <td class="risk-description-cell">${escapeHtml(risk.description || '—')}</td>
+                    <td class="risk-description-cell">
+                        <div class="risk-register-title">${escapeHtml(risk.titre || risk.description || 'Untitled')}</div>
+                        <div class="risk-register-description">${escapeHtml(risk.description || '—')}</div>
+                    </td>
                     <td>${renderChipList(processChipLabels)}</td>
                     <td>${typeLabel}</td>
                     <td>${renderChipList(entityLabels)}</td>
@@ -12064,6 +12078,7 @@ class RiskManagementSystem {
                 }
             }
 
+            document.getElementById('titre').value = risk.titre || '';
             document.getElementById('description').value = risk.description || '';
             document.getElementById('example').value = risk.example || '';
             document.getElementById('comment').value = risk.comment || '';
