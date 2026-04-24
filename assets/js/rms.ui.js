@@ -92,6 +92,9 @@ function syncRiskFilterWidgets(filterKey, value, sourceElement) {
         }
 
         if (Array.isArray(normalizedValue)) {
+            if (normalizedKey === 'tiers' && typeof window.renderRiskTierFilterOptions === 'function') {
+                window.renderRiskTierFilterOptions();
+            }
             return;
         }
 
@@ -127,11 +130,11 @@ function applyFilters(filterKeyOrEvent, value, sourceElement) {
     const normalizedKey = typeof filterKey === 'string' ? filterKey.trim() : '';
 
     if (!rms.filters) {
-        rms.filters = { process: '', type: '', status: '', search: '', entity: [] };
+        rms.filters = { process: '', type: '', status: '', search: '', entity: [], tiers: [] };
     }
 
     if (normalizedKey) {
-        const normalizedValue = normalizedKey === 'entity'
+        const normalizedValue = (normalizedKey === 'entity' || normalizedKey === 'tiers')
             ? (Array.isArray(filterValue) ? filterValue : [])
             : (filterValue == null ? '' : String(filterValue));
         rms.filters[normalizedKey] = normalizedValue;
@@ -165,7 +168,7 @@ function searchRisks(searchTermOrEvent, sourceElement) {
     const normalizedValue = searchTerm == null ? '' : String(searchTerm).trim();
 
     if (!rms.filters) {
-        rms.filters = { process: '', type: '', status: '', search: '', entity: [] };
+        rms.filters = { process: '', type: '', status: '', search: '', entity: [], tiers: [] };
     }
 
     rms.filters.search = normalizedValue;
@@ -185,7 +188,7 @@ function toggleEntityFilterChip(entityValue) {
     if (!window.rms || !entityValue) return;
 
     if (!rms.filters) {
-        rms.filters = { process: '', type: '', status: '', search: '', entity: [] };
+        rms.filters = { process: '', type: '', status: '', search: '', entity: [], tiers: [] };
     }
 
     const current = Array.isArray(rms.filters.entity) ? rms.filters.entity : [];
@@ -196,6 +199,108 @@ function toggleEntityFilterChip(entityValue) {
     applyFilters('entity', next, null);
 }
 window.toggleEntityFilterChip = toggleEntityFilterChip;
+
+function renderRiskTierFilterOptions() {
+    if (!window.rms) return;
+    const optionsContainer = document.getElementById('riskTierFilterOptions');
+    const countBadge = document.getElementById('riskTierFilterCount');
+    if (!optionsContainer) {
+        return;
+    }
+
+    if (!rms.filters) {
+        rms.filters = { process: '', type: '', status: '', search: '', entity: [], tiers: [] };
+    }
+
+    const options = Array.isArray(rms.config?.tiers) ? rms.config.tiers : [];
+    const selected = new Set(Array.isArray(rms.filters.tiers) ? rms.filters.tiers : []);
+    optionsContainer.innerHTML = '';
+
+    options.forEach((entry, index) => {
+        if (!entry || entry.value == null) {
+            return;
+        }
+        const value = String(entry.value);
+        const label = entry.label || value;
+        const optionLabel = document.createElement('label');
+        optionLabel.className = 'risk-tier-filter-option';
+        optionLabel.setAttribute('for', `riskTierFilter-${index}`);
+        const checkbox = document.createElement('input');
+        checkbox.id = `riskTierFilter-${index}`;
+        checkbox.type = 'checkbox';
+        checkbox.value = value;
+        const labelText = document.createElement('span');
+        labelText.textContent = label;
+        optionLabel.appendChild(checkbox);
+        optionLabel.appendChild(labelText);
+        checkbox.checked = selected.has(value);
+        checkbox.addEventListener('change', () => {
+            applyRiskTierFilterFromUi();
+        });
+        optionsContainer.appendChild(optionLabel);
+    });
+
+    const count = selected.size;
+    if (countBadge) {
+        countBadge.textContent = String(count);
+        countBadge.classList.toggle('has-value', count > 0);
+    }
+}
+window.renderRiskTierFilterOptions = renderRiskTierFilterOptions;
+
+function applyRiskTierFilterFromUi() {
+    const optionsContainer = document.getElementById('riskTierFilterOptions');
+    if (!optionsContainer) return;
+    const selectedValues = Array.from(optionsContainer.querySelectorAll('input[type="checkbox"]:checked'))
+        .map(input => input.value);
+    applyFilters('tiers', selectedValues, optionsContainer);
+}
+
+function toggleRiskTierFilterDropdown(forceState) {
+    const menu = document.getElementById('riskTierFilterMenu');
+    const toggle = document.getElementById('riskTierFilterToggle');
+    if (!menu || !toggle) {
+        return;
+    }
+    const shouldOpen = typeof forceState === 'boolean'
+        ? forceState
+        : menu.hasAttribute('hidden');
+    if (shouldOpen) {
+        menu.removeAttribute('hidden');
+        toggle.setAttribute('aria-expanded', 'true');
+        renderRiskTierFilterOptions();
+        return;
+    }
+    menu.setAttribute('hidden', '');
+    toggle.setAttribute('aria-expanded', 'false');
+}
+window.toggleRiskTierFilterDropdown = toggleRiskTierFilterDropdown;
+
+function clearRiskTierFilters() {
+    applyFilters('tiers', [], null);
+}
+window.clearRiskTierFilters = clearRiskTierFilters;
+
+if (!document.body.dataset.riskTierFilterBound) {
+    document.addEventListener('click', (event) => {
+        const menu = document.getElementById('riskTierFilterMenu');
+        const toggle = document.getElementById('riskTierFilterToggle');
+        if (!menu || !toggle || menu.hasAttribute('hidden')) {
+            return;
+        }
+        const clickTarget = event.target;
+        if (menu.contains(clickTarget) || toggle.contains(clickTarget)) {
+            return;
+        }
+        toggleRiskTierFilterDropdown(false);
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            toggleRiskTierFilterDropdown(false);
+        }
+    });
+    document.body.dataset.riskTierFilterBound = 'true';
+}
 
 function syncControlFilterWidgets(filterKey, value, sourceElement) {
     const normalizedKey = typeof filterKey === 'string' ? filterKey.trim() : '';

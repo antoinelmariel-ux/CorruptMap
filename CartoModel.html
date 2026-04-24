@@ -683,7 +683,29 @@
                                     <th>Description</th>
                                     <th>Process / Sub-process</th>
                                     <th>Type</th>
-                                    <th>Tiers</th>
+                                    <th class="tiers-header-cell">
+                                        <div class="risk-tier-filter-header">
+                                            <span>Tiers</span>
+                                            <button
+                                                class="risk-tier-filter-toggle"
+                                                id="riskTierFilterToggle"
+                                                type="button"
+                                                aria-label="Filter by tiers"
+                                                aria-expanded="false"
+                                                onclick="toggleRiskTierFilterDropdown()"
+                                            >
+                                                ⌕
+                                                <span id="riskTierFilterCount" class="risk-tier-filter-count"></span>
+                                            </button>
+                                            <div id="riskTierFilterMenu" class="risk-tier-filter-menu" hidden>
+                                                <div class="risk-tier-filter-menu-header">
+                                                    <span>Filter tiers</span>
+                                                    <button type="button" class="risk-tier-filter-clear" onclick="clearRiskTierFilters()">Reset</button>
+                                                </div>
+                                                <div id="riskTierFilterOptions" class="risk-tier-filter-options"></div>
+                                            </div>
+                                        </div>
+                                    </th>
                                     <th class="sortable-header" onclick="rms.setRiskRegisterSort('gross')">Gross score <span id="riskSortArrow-gross" class="sort-arrow">↕</span></th>
                                     <th class="sortable-header" onclick="rms.setRiskRegisterSort('aggravated')">Aggravated score <span id="riskSortArrow-aggravated" class="sort-arrow">↕</span></th>
                                     <th class="sortable-header" onclick="rms.setRiskRegisterSort('net')">Net score <span id="riskSortArrow-net" class="sort-arrow">↕</span></th>
@@ -891,7 +913,7 @@
             </div>
         </div>
         <footer class="app-footer">
-            <span class="app-version">Version 2.14.114</span>
+            <span class="app-version">Version 2.14.115</span>
         </footer>
     </div>
 
