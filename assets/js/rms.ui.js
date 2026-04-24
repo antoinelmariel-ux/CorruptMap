@@ -1277,6 +1277,7 @@ function saveRisk() {
         processusAssocies,
         sousProcessus: sousProcessusAssocies[0] || '',
         sousProcessusAssocies,
+        titre: document.getElementById('titre').value,
         description: document.getElementById('description').value,
         example: document.getElementById('example').value,
         comment: document.getElementById('comment').value,

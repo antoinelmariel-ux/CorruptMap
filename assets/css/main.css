@@ -1642,6 +1642,17 @@ body.feedback-mode-paused .feedback-panel * {
     font-size: 0.95em;
 }
 
+.risk-item-title-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.risk-item-description {
+    font-size: 0.85em;
+    color: var(--muted-text-color);
+}
+
 .risk-item-score {
     padding: 2px 8px;
     border-radius: 12px;
@@ -2070,6 +2081,15 @@ body.feedback-mode-paused .feedback-panel * {
 
 #risksTable .risk-description-cell {
     white-space: normal;
+}
+
+.risk-register-title {
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.risk-register-description {
+    color: var(--text-color);
 }
 
 .table-header {
