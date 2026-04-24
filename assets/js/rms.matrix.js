@@ -8,14 +8,19 @@ var currentPointerId = null;
 var lastDragCell = null;
 var netMitigationOptions = [];
 
-function updateNetSeverityBadge(impactValue) {
+function updateNetSeverityBadge(input) {
     const badge = document.getElementById('netSeverityLabel');
     if (!badge) return;
 
-    const numericImpact = parseInt(impactValue, 10) || 1;
-    const severity = typeof getSeverityFromNetImpactValue === 'function'
-        ? getSeverityFromNetImpactValue(numericImpact)
-        : (numericImpact >= 4 ? 'critique' : numericImpact === 3 ? 'fort' : numericImpact === 2 ? 'modere' : 'faible');
+    const numericInput = Number(input);
+    const severity = Number.isFinite(numericInput) && typeof getRiskSeverityFromScore === 'function'
+        ? getRiskSeverityFromScore(numericInput)
+        : (function resolveSeverityFromImpact(value) {
+            const numericImpact = parseInt(value, 10) || 1;
+            return typeof getSeverityFromNetImpactValue === 'function'
+                ? getSeverityFromNetImpactValue(numericImpact)
+                : (numericImpact >= 4 ? 'critique' : numericImpact === 3 ? 'fort' : numericImpact === 2 ? 'modere' : 'faible');
+        }(input));
 
     const severityLabels = {
         critique: 'Critical Risk',
@@ -30,6 +35,26 @@ function updateNetSeverityBadge(impactValue) {
     } else {
         badge.removeAttribute('data-severity');
     }
+}
+
+function computeCurrentNetScore() {
+    const brutProb = parseInt(document.getElementById('probBrut')?.value, 10) || 1;
+    const brutImpact = parseInt(document.getElementById('impactBrut')?.value, 10) || 1;
+    const aggravatingCoefficient = typeof getFormAggravatingSelection === 'function'
+        ? Number(getFormAggravatingSelection()?.coefficient) || 1
+        : 1;
+    const safeAggravatingCoefficient = aggravatingCoefficient >= 1 ? aggravatingCoefficient : 1;
+    const brutScore = brutProb * brutImpact * safeAggravatingCoefficient;
+    const mitigationLevel = typeof getMitigationLevelFromColumn === 'function'
+        ? getMitigationLevelFromColumn(document.getElementById('probNet')?.value)
+        : 'inefficace';
+    const mitigationCoefficient = typeof getRiskMitigationCoefficient === 'function'
+        ? getRiskMitigationCoefficient(mitigationLevel)
+        : 1;
+
+    return typeof clampMitigationFactor === 'function'
+        ? brutScore * clampMitigationFactor(mitigationCoefficient)
+        : brutScore * mitigationCoefficient;
 }
 
 function ensureNetMitigationOptions() {
@@ -299,7 +324,7 @@ function calculateScore(type) {
             impactInput.value = netImpactValue;
         }
 
-        updateNetSeverityBadge(netImpactValue);
+        updateNetSeverityBadge(rawScore);
         updateNetSliderUI(prob);
     }
 
@@ -544,13 +569,10 @@ function setActiveRiskState(state) {
     updateMatrixDescription(prob, impact, state);
 
     if (state === 'net') {
-        const impactValue = document.getElementById('impactNet')?.value;
-        if (impactValue) {
-            updateNetSeverityBadge(impactValue);
-        }
-        const probValue = document.getElementById('probNet')?.value;
-        if (probValue) {
-            updateNetSliderUI(probValue);
+        updateNetSeverityBadge(computeCurrentNetScore());
+        const netProbValue = document.getElementById('probNet')?.value;
+        if (netProbValue) {
+            updateNetSliderUI(netProbValue);
         }
     }
     positionAllPoints();
@@ -721,10 +743,7 @@ function initRiskEditMatrix() {
     const initialState = RISK_STATE_CONFIG[activeRiskEditState] ? activeRiskEditState : 'brut';
     setActiveRiskState(initialState);
 
-    const netImpact = document.getElementById('impactNet')?.value;
-    if (netImpact) {
-        updateNetSeverityBadge(netImpact);
-    }
+    updateNetSeverityBadge(computeCurrentNetScore());
     const netProb = document.getElementById('probNet')?.value;
     if (netProb) {
         updateNetSliderUI(netProb);
