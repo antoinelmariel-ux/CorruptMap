@@ -3589,7 +3589,7 @@ class RiskManagementSystem {
     }
 
     setRiskRegisterSort(sortKey) {
-        const allowedKeys = new Set(['id', 'gross', 'aggravated', 'net']);
+        const allowedKeys = new Set(['id', 'process', 'gross', 'aggravated', 'net']);
         if (!allowedKeys.has(sortKey)) {
             return;
         }
@@ -3605,7 +3605,7 @@ class RiskManagementSystem {
 
     updateRiskRegisterSortIndicators() {
         const sortState = this.riskRegisterSort || { key: '', direction: 'desc' };
-        const allKeys = ['id', 'gross', 'aggravated', 'net'];
+        const allKeys = ['id', 'process', 'gross', 'aggravated', 'net'];
         allKeys.forEach((key) => {
             const arrow = document.getElementById(`riskSortArrow-${key}`);
             if (!arrow) {
@@ -9599,6 +9599,43 @@ class RiskManagementSystem {
             const rawValue = String(value);
             return map[rawValue] || map[rawValue.toLowerCase()] || value;
         };
+        const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (match) => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[match]));
+        const hashLabel = (label = '') => {
+            return Array.from(String(label)).reduce((acc, char) => ((acc << 5) - acc + char.charCodeAt(0)) | 0, 0);
+        };
+        const renderColorChip = (label, fallback = '—') => {
+            const chipLabel = String(label || fallback);
+            const hue = Math.abs(hashLabel(chipLabel)) % 360;
+            const style = `--chip-color: hsl(${hue} 70% 45%);`;
+            return `<span class="risk-register-chip" style="${style}">${escapeHtml(chipLabel)}</span>`;
+        };
+        const renderChipList = (labels, fallback = '—') => {
+            const items = (Array.isArray(labels) ? labels : []).filter(Boolean);
+            if (!items.length) {
+                return `<span class="risk-register-chip-list">${renderColorChip(fallback, fallback)}</span>`;
+            }
+            return `<span class="risk-register-chip-list">${items.map(item => renderColorChip(item)).join('')}</span>`;
+        };
+        const getSeverityClassFromScore = (score) => {
+            if (!Number.isFinite(score)) {
+                return 'na';
+            }
+            if (score >= 12) return 'critical';
+            if (score >= 6) return 'high';
+            if (score >= 3) return 'medium';
+            return 'low';
+        };
+        const renderScoreCircle = (label, score, title = '') => {
+            const severityClass = getSeverityClassFromScore(score);
+            const titleAttr = title ? ` title="${escapeHtml(title)}"` : '';
+            return `<span class="risk-score-circle ${severityClass}"${titleAttr}>${escapeHtml(label)}</span>`;
+        };
 
         if (!allRisks.length) {
             tbody.innerHTML = `
@@ -9680,7 +9717,8 @@ class RiskManagementSystem {
                 : (riskStatusValue === 'archive' ? 'danger' : 'warning');
             const processLabel = this.getProcessLabel(risk.processus) || '';
             const subProcessLabel = this.getSubProcessLabel(risk.processus, risk.sousProcessus) || '';
-            const processOrSubProcess = subProcessLabel || processLabel;
+            const processSortLabel = [processLabel, subProcessLabel].filter(Boolean).join(' / ').toLowerCase();
+            const processChipLabels = [processLabel, subProcessLabel].filter(Boolean);
             const actionPlanRefs = Array.isArray(risk?.actionPlans) ? risk.actionPlans : [];
             const actionPlanNames = actionPlanRefs.map(ref => {
                 if (ref && typeof ref === 'object') {
@@ -9696,20 +9734,21 @@ class RiskManagementSystem {
             return {
                 risk,
                 idScore: Number(risk?.id) || 0,
+                processScore: processSortLabel,
                 grossScore: Number.isFinite(grossScore) ? Number(grossScore) : null,
                 aggravatedScore: Number.isFinite(aggravatedScore) ? Number(aggravatedScore) : null,
                 netScore: Number.isFinite(netScore) ? Number(netScore) : null,
                 html: `
                 <tr>
                     <td>#${risk.id}</td>
-                    <td>${risk.description}</td>
-                    <td>${processOrSubProcess}</td>
+                    <td class="risk-description-cell">${escapeHtml(risk.description || '—')}</td>
+                    <td>${renderChipList(processChipLabels)}</td>
                     <td>${typeLabel}</td>
-                    <td>${entityLabels.join(', ') || '—'}</td>
-                    <td>${tierLabels.join(', ')}</td>
-                    <td>${grossLabel}</td>
-                    <td>${aggravatedLabel}</td>
-                    <td title="Reduction ${reductionLabel}${effectivenessLabel}">${netLabel}</td>
+                    <td>${renderChipList(entityLabels)}</td>
+                    <td>${renderChipList(tierLabels)}</td>
+                    <td>${renderScoreCircle(grossLabel, grossScore)}</td>
+                    <td>${renderScoreCircle(aggravatedLabel, aggravatedScore)}</td>
+                    <td>${renderScoreCircle(netLabel, netScore, `Reduction ${reductionLabel}${effectivenessLabel}`)}</td>
                     <td title="${actionPlansLabel}">${actionPlansLabel}</td>
                     <td><span class="table-badge badge-${riskBadgeClass}">${riskStatusLabel || 'Not defined'}</span></td>
                     <td class="table-actions-cell">
@@ -9727,11 +9766,14 @@ class RiskManagementSystem {
         const sortState = this.riskRegisterSort || { key: '', direction: 'desc' };
         const sortedRows = rows.slice();
         if (sortState.key) {
-            const scoreKey = `${sortState.key}Score`;
             const multiplier = sortState.direction === 'asc' ? 1 : -1;
             sortedRows.sort((a, b) => {
-                const aValue = a[scoreKey];
-                const bValue = b[scoreKey];
+                const metricKey = `${sortState.key}Score`;
+                const aValue = a[metricKey];
+                const bValue = b[metricKey];
+                if (sortState.key === 'process') {
+                    return String(aValue || '').localeCompare(String(bValue || ''), 'fr', { sensitivity: 'base' }) * multiplier;
+                }
                 if (aValue == null && bValue == null) {
                     return 0;
                 }

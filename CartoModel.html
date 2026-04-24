@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Corruption Risk Mapping - Sapin II v2.14.117</title>
+    <title>Corruption Risk Mapping - Sapin II v2.14.118</title>
     <link rel="stylesheet" href="assets/css/main.css">
     <!-- Local dependencies with CDN fallback -->
     <script>
@@ -680,8 +680,8 @@
                             <thead>
                                 <tr>
                                     <th class="sortable-header" onclick="rms.setRiskRegisterSort('id')">ID <span id="riskSortArrow-id" class="sort-arrow">↕</span></th>
-                                    <th>Description</th>
-                                    <th>Process / Sub-process</th>
+                                    <th class="risk-description-column">Description</th>
+                                    <th class="sortable-header" onclick="rms.setRiskRegisterSort('process')">Process / Sub-process <span id="riskSortArrow-process" class="sort-arrow">↕</span></th>
                                     <th>Type</th>
                                     <th>Entities</th>
                                     <th class="tiers-header-cell">
@@ -914,7 +914,7 @@
             </div>
         </div>
         <footer class="app-footer">
-            <span class="app-version">Version 2.14.117</span>
+            <span class="app-version">Version 2.14.118</span>
         </footer>
     </div>
 

@@ -2062,6 +2062,16 @@ body.feedback-mode-paused .feedback-panel * {
     min-width: 1500px;
 }
 
+#risksTable .risk-description-column,
+#risksTable .risk-description-cell {
+    min-width: 440px;
+    max-width: 560px;
+}
+
+#risksTable .risk-description-cell {
+    white-space: normal;
+}
+
 .table-header {
     background: linear-gradient(120deg, rgba(11, 61, 96, 0.08), transparent 70%);
     padding: 16px 24px;
@@ -2233,6 +2243,67 @@ tbody tr:hover {
 
 #risksTable .sortable-header .sort-arrow.active {
     color: var(--primary-color);
+}
+
+#risksTable .risk-register-chip-list {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+#risksTable .risk-register-chip {
+    --chip-color: #2563eb;
+    display: inline-flex;
+    align-items: center;
+    max-width: 220px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.2;
+    border: 1px solid color-mix(in srgb, var(--chip-color) 30%, #ffffff 70%);
+    color: color-mix(in srgb, var(--chip-color) 82%, #111827 18%);
+    background: color-mix(in srgb, var(--chip-color) 16%, #ffffff 84%);
+}
+
+#risksTable .risk-score-circle {
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.8rem;
+    border: 2px solid transparent;
+    background: #fff;
+}
+
+#risksTable .risk-score-circle.low {
+    color: var(--success-color);
+    border-color: color-mix(in srgb, var(--success-color) 75%, #ffffff 25%);
+}
+
+#risksTable .risk-score-circle.medium {
+    color: var(--warning-color);
+    border-color: color-mix(in srgb, var(--warning-color) 75%, #ffffff 25%);
+}
+
+#risksTable .risk-score-circle.high {
+    color: #e67e22;
+    border-color: color-mix(in srgb, #e67e22 75%, #ffffff 25%);
+}
+
+#risksTable .risk-score-circle.critical {
+    color: var(--danger-color);
+    border-color: color-mix(in srgb, var(--danger-color) 75%, #ffffff 25%);
+}
+
+#risksTable .risk-score-circle.na {
+    color: var(--muted-text-color);
+    border-color: var(--border-color);
 }
 
 .tiers-header-cell {
