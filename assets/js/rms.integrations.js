@@ -1664,6 +1664,13 @@ function parseIds(value) {
         .map(entry => (/^-?\d+$/.test(entry) ? Number.parseInt(entry, 10) : entry));
 }
 
+function parseIdentifier(value, fallback) {
+    const raw = String(value ?? '').trim();
+    const candidate = raw || String(fallback ?? '').trim();
+    if (!candidate) return '';
+    return /^-?\d+$/.test(candidate) ? Number.parseInt(candidate, 10) : candidate;
+}
+
 function exportRisksAssessmentCsv() {
     if (!window.rms || !Array.isArray(rms.risks) || rms.risks.length === 0) {
         if (typeof showNotification === 'function') {
@@ -2193,7 +2200,7 @@ function importControlsCsv() {
             }
 
             const importedControls = rows.map((row, index) => ({
-                id: row.id || row.identifiant || row.code || `control-${Date.now()}-${index + 1}`,
+                id: parseIdentifier(row.id || row.identifiant || row.code, `control-${Date.now()}-${index + 1}`),
                 reference: row.reference || '',
                 groupCode: row.groupCode || '',
                 name: row.name || row.nom || `Contrôle ${index + 1}`,
@@ -2212,6 +2219,37 @@ function importControlsCsv() {
             const existing = new Map((rms.controls || []).map(control => [String(control.id), control]));
             importedControls.forEach((control) => existing.set(String(control.id), { ...existing.get(String(control.id)), ...control }));
             rms.controls = Array.from(existing.values());
+
+            const controlsByRisk = new Map();
+            rms.controls.forEach((control) => {
+                const controlId = control?.id;
+                const linkedRisks = Array.isArray(control?.risks) ? control.risks : [];
+                linkedRisks.forEach((riskId) => {
+                    const key = String(riskId);
+                    if (!controlsByRisk.has(key)) {
+                        controlsByRisk.set(key, []);
+                    }
+                    const controlList = controlsByRisk.get(key);
+                    if (!controlList.some(id => idsEqual(id, controlId))) {
+                        controlList.push(controlId);
+                    }
+                });
+            });
+
+            if (Array.isArray(rms.risks)) {
+                rms.risks = rms.risks.map((risk) => {
+                    const existingControls = Array.isArray(risk?.controls) ? risk.controls : [];
+                    const importedLinkedControls = controlsByRisk.get(String(risk?.id)) || [];
+                    const mergedControls = [...existingControls];
+                    importedLinkedControls.forEach((controlId) => {
+                        if (!mergedControls.some(id => idsEqual(id, controlId))) {
+                            mergedControls.push(controlId);
+                        }
+                    });
+                    return { ...risk, controls: mergedControls };
+                });
+            }
+
             if (typeof rms.saveData === 'function') {
                 rms.saveData();
             }
