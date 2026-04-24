@@ -9547,6 +9547,7 @@ class RiskManagementSystem {
 
         const typeMap = buildLabelMap(this.config?.riskTypes);
         const tierMap = buildLabelMap(this.config?.tiers);
+        const entityMap = buildLabelMap(this.config?.countries);
 
         const resolveLabel = (map, value) => {
             if (value == null) {
@@ -9559,7 +9560,7 @@ class RiskManagementSystem {
         if (!allRisks.length) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="11" class="table-empty">No risk recorded</td>
+                    <td colspan="12" class="table-empty">No risk recorded</td>
                 </tr>
             `;
             this.updateRiskRegisterSortIndicators();
@@ -9569,7 +9570,7 @@ class RiskManagementSystem {
         if (!filteredRisks.length) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="11" class="table-empty">No risk matches the filters</td>
+                    <td colspan="12" class="table-empty">No risk matches the filters</td>
                 </tr>
             `;
             this.updateRiskRegisterSortIndicators();
@@ -9624,6 +9625,9 @@ class RiskManagementSystem {
             const effectivenessLabel = netInfo.label ? ` (${netInfo.label})` : '';
 
             const typeLabel = resolveLabel(typeMap, risk.typeCorruption);
+            const entityLabels = Array.isArray(risk.paysExposes)
+                ? risk.paysExposes.map(entity => resolveLabel(entityMap, entity))
+                : [];
             const tierLabels = Array.isArray(risk.tiers)
                 ? risk.tiers.map(tier => resolveLabel(tierMap, tier))
                 : [];
@@ -9658,6 +9662,7 @@ class RiskManagementSystem {
                     <td>${risk.description}</td>
                     <td>${processOrSubProcess}</td>
                     <td>${typeLabel}</td>
+                    <td>${entityLabels.join(', ') || '—'}</td>
                     <td>${tierLabels.join(', ')}</td>
                     <td>${grossLabel}</td>
                     <td>${aggravatedLabel}</td>
