@@ -6254,6 +6254,31 @@ class RiskManagementSystem {
                     const actions = document.createElement('div');
                     actions.className = 'config-item-actions';
 
+                    if (key === 'tiers') {
+                        const upButton = document.createElement('button');
+                        upButton.type = 'button';
+                        upButton.className = 'btn btn-outline';
+                        upButton.textContent = '↑';
+                        upButton.title = 'Move up';
+                        upButton.disabled = idx === 0;
+                        upButton.addEventListener('click', () => {
+                            this.moveConfigOption(key, idx, -1);
+                        });
+
+                        const downButton = document.createElement('button');
+                        downButton.type = 'button';
+                        downButton.className = 'btn btn-outline';
+                        downButton.textContent = '↓';
+                        downButton.title = 'Move down';
+                        downButton.disabled = idx >= this.config[key].length - 1;
+                        downButton.addEventListener('click', () => {
+                            this.moveConfigOption(key, idx, 1);
+                        });
+
+                        actions.appendChild(upButton);
+                        actions.appendChild(downButton);
+                    }
+
                     const editButton = document.createElement('button');
                     editButton.type = 'button';
                     editButton.className = 'btn btn-secondary';
@@ -6353,6 +6378,24 @@ class RiskManagementSystem {
             .forEach(updateList);
 
         this.adjustOpenAccordionBodies();
+    }
+
+    moveConfigOption(key, index, direction) {
+        if (this.readOnlyConfigKeys.has(key)) {
+            return;
+        }
+        if (!Array.isArray(this.config[key])) {
+            return;
+        }
+        const targetIndex = index + direction;
+        if (targetIndex < 0 || targetIndex >= this.config[key].length) {
+            return;
+        }
+        const [moved] = this.config[key].splice(index, 1);
+        this.config[key].splice(targetIndex, 0, moved);
+        this.saveConfig();
+        this.populateSelects();
+        this.refreshConfigLists();
     }
 
     updateConfigOption(key, index, updated) {
