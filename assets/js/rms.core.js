@@ -9496,10 +9496,49 @@ class RiskManagementSystem {
                 return a.label.localeCompare(b.label, 'fr', { sensitivity: 'base' });
             });
 
+            const formatProcessAxisLabel = (rawLabel) => {
+                const source = String(rawLabel || '').trim();
+                if (!source) {
+                    return ['Not defined'];
+                }
+
+                const words = source.split(/\s+/).filter(Boolean);
+                const maxLineLength = 14;
+                const maxLines = 3;
+                const lines = [];
+                let currentLine = '';
+
+                words.forEach((word) => {
+                    if (!currentLine) {
+                        currentLine = word;
+                        return;
+                    }
+
+                    if (`${currentLine} ${word}`.length <= maxLineLength) {
+                        currentLine = `${currentLine} ${word}`;
+                    } else {
+                        lines.push(currentLine);
+                        currentLine = word;
+                    }
+                });
+
+                if (currentLine) {
+                    lines.push(currentLine);
+                }
+
+                if (lines.length > maxLines) {
+                    const kept = lines.slice(0, maxLines);
+                    kept[maxLines - 1] = `${kept[maxLines - 1].slice(0, Math.max(maxLineLength - 1, 1)).trim()}…`;
+                    return kept;
+                }
+
+                return lines;
+            };
+
             if (combinedCanvas) {
                 const totalCount = sortedEntries.reduce((sum, entry) => sum + entry.count, 0);
                 const hasProcessData = sortedEntries.some(entry => entry.count > 0);
-                const labels = sortedEntries.map(entry => entry.label);
+                const labels = sortedEntries.map(entry => formatProcessAxisLabel(entry.label));
                 const counts = sortedEntries.map(entry => entry.count);
                 const medians = sortedEntries.map(entry => Number(entry.median.toFixed(2)));
 
@@ -9554,6 +9593,16 @@ class RiskManagementSystem {
                         intersect: false
                     },
                     scales: {
+                        x: {
+                            ticks: {
+                                autoSkip: false,
+                                maxRotation: 0,
+                                minRotation: 0,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
                         y: {
                             beginAtZero: true,
                             title: {
@@ -9586,6 +9635,14 @@ class RiskManagementSystem {
                             mode: 'index',
                             intersect: false,
                             callbacks: {
+                                title: (items) => {
+                                    if (!Array.isArray(items) || items.length === 0) {
+                                        return '';
+                                    }
+                                    const index = items[0]?.dataIndex;
+                                    const entry = metadata[index];
+                                    return entry?.label || items[0]?.label || '';
+                                },
                                 label: (context) => {
                                     const entry = context?.dataset?.metadata?.[context.dataIndex];
                                     if (context.dataset.type === 'line') {
