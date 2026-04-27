@@ -7697,17 +7697,15 @@ class RiskManagementSystem {
                     const netRange = Math.max(0.01, netMax - netMin);
                     const normalizedNet = Math.max(0, Math.min(0.999, (displayNetScore - netMin) / netRange));
 
-                    const colSlot = normalizedNet >= 0.5 ? 0 : 1;
-                    const rowSlot = normalizedBrut >= 0.5 ? 0 : 1;
-                    const withinCol = colSlot === 0 ? 0.25 : 0.75;
-                    const withinRow = rowSlot === 0 ? 0.25 : 0.75;
+                    const withinCol = 0.8 - (normalizedNet * 0.6);
+                    const withinRow = 0.8 - (normalizedBrut * 0.6);
                     const rawLeftPercent = ((colIndex + withinCol) / mitigationOrder.length) * 100;
                     const rawBottomPercent = ((brutLevelsOrder.length - (rowIndex + withinRow)) / brutLevelsOrder.length) * 100;
                     const leftPercent = Math.max(2.5, Math.min(97.5, rawLeftPercent));
                     const bottomPercent = Math.max(2.5, Math.min(97.5, rawBottomPercent));
 
-                    const virtualCol = Math.min(1, Math.floor(withinCol * 2));
-                    const virtualRow = Math.min(1, Math.floor(withinRow * 2));
+                    const virtualCol = Math.min(3, Math.floor(withinCol * 4));
+                    const virtualRow = Math.min(3, Math.floor(withinRow * 4));
                     const key = `${colIndex}-${rowIndex}-${virtualCol}-${virtualRow}`;
                     const index = cellCounts[key] || 0;
                     cellCounts[key] = index + 1;
