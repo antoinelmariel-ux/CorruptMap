@@ -1763,8 +1763,18 @@ function exportReportsRisksXlsx() {
     const normalizeId = (value) => (value == null ? '' : String(value).trim());
     const risks = Array.isArray(rms.risks) ? rms.risks : [];
     const plans = Array.isArray(rms.actionPlans) ? rms.actionPlans : [];
+    const controls = Array.isArray(rms.controls) ? rms.controls : [];
     const actionPlanIndex = new Map();
     const riskPlanLinks = new Map();
+    const controlIndex = new Map();
+
+    controls.forEach((control) => {
+        if (!control || typeof control !== 'object') return;
+        const controlId = normalizeId(control.id);
+        if (controlId) {
+            controlIndex.set(controlId, control);
+        }
+    });
 
     plans.forEach((plan) => {
         if (!plan || typeof plan !== 'object') return;
@@ -1855,21 +1865,68 @@ function exportReportsRisksXlsx() {
         return Math.round(value * 100) / 100;
     };
 
+    const stringifyList = (values = []) => (Array.isArray(values) ? values.filter(Boolean).join(' | ') : '');
+    const mapListToLabels = (values = [], options = []) => (
+        Array.isArray(values)
+            ? values.map((item) => mapToLabel(item, options)).filter(Boolean).join(' | ')
+            : ''
+    );
+
+    const resolveProcessLabel = (value) => {
+        const normalized = normalizeId(value);
+        if (!normalized) return '';
+        if (typeof rms.getProcessLabel === 'function') {
+            return rms.getProcessLabel(normalized) || normalized;
+        }
+        return normalized;
+    };
+
+    const resolveSubProcessLabel = (processValue, subProcessValue) => {
+        const normalizedSubProcess = normalizeId(subProcessValue);
+        if (!normalizedSubProcess) return '';
+        if (typeof rms.getSubProcessLabel === 'function') {
+            const resolved = rms.getSubProcessLabel(processValue, normalizedSubProcess);
+            return resolved || normalizedSubProcess;
+        }
+        return normalizedSubProcess;
+    };
+
     const riskRows = risks.map((risk) => {
         const riskId = normalizeId(risk?.id);
         const riskStatus = typeof rms.getStatusLabel === 'function'
             ? rms.getStatusLabel('risk', risk?.statut, risk?.status, risk?.statusLabel)
             : (risk?.statut || risk?.status || '');
+        const riskStatusRaw = normalizeId(risk?.statut || risk?.status || risk?.statusLabel || risk?.state);
         const corruptionLabel = mapToLabel(risk?.typeCorruption, rms?.config?.riskTypes);
+        const corruptionTypes = Array.isArray(risk?.typesCorruption) && risk.typesCorruption.length
+            ? risk.typesCorruption
+            : (risk?.typeCorruption ? [risk.typeCorruption] : []);
         const tiers = Array.isArray(risk?.tiers)
             ? risk.tiers.map((item) => mapToLabel(item, rms?.config?.tiers)).filter(Boolean).join(', ')
             : '';
         const entities = Array.isArray(risk?.paysExposes)
             ? risk.paysExposes.map((item) => mapToLabel(item, rms?.config?.countries)).filter(Boolean).join(', ')
             : '';
+        const processList = Array.isArray(risk?.processusAssocies) && risk.processusAssocies.length
+            ? risk.processusAssocies
+            : (risk?.processus ? [risk.processus] : []);
+        const subProcessList = Array.isArray(risk?.sousProcessusAssocies) && risk.sousProcessusAssocies.length
+            ? risk.sousProcessusAssocies
+            : (risk?.sousProcessus ? [risk.sousProcessus] : []);
+        const corruptionExposureTypes = Array.isArray(risk?.corruptionExposureTypes) && risk.corruptionExposureTypes.length
+            ? risk.corruptionExposureTypes
+            : (risk?.corruptionExposure ? [risk.corruptionExposure] : []);
+        const corruptionModes = Array.isArray(risk?.corruptionModes) && risk.corruptionModes.length
+            ? risk.corruptionModes
+            : (risk?.corruptionMode ? [risk.corruptionMode] : []);
+        const targetAudiences = Array.isArray(risk?.targetAudiences) && risk.targetAudiences.length
+            ? risk.targetAudiences
+            : (risk?.targetAudience ? [risk.targetAudience] : []);
 
         const probBrut = Number(risk?.probBrut) || 0;
         const impactBrut = Number(risk?.impactBrut) || 0;
+        const probNet = Number(risk?.probNet) || 0;
+        const impactNet = Number(risk?.impactNet) || 0;
         const netInfo = typeof getRiskNetInfo === 'function' ? getRiskNetInfo(risk) : null;
         const aggravatingCoefficient = netInfo?.aggravatingCoefficient
             ?? (typeof getRiskAggravatingCoefficient === 'function' ? getRiskAggravatingCoefficient(risk) : 1);
@@ -1901,22 +1958,74 @@ function exportReportsRisksXlsx() {
             }
             return plan?.status || plan?.statut || plan?.statusLabel || '';
         }).filter(Boolean).join(' | ');
+        const relatedPlanIds = relatedPlans.map((plan) => normalizeId(plan?.id)).filter(Boolean).join(' | ');
+
+        const controlIds = Array.isArray(risk?.controls) ? risk.controls : [];
+        const controlNames = controlIds.map((controlId) => {
+            const control = controlIndex.get(normalizeId(controlId));
+            return control?.name || control?.title || '';
+        }).filter(Boolean).join(' | ');
+        const controlAssignments = Array.isArray(risk?.controlAssignments) ? risk.controlAssignments : [];
+        const controlAssignmentDetails = controlAssignments.map((entry) => {
+            const controlId = normalizeId(entry?.controlId ?? entry?.id);
+            const control = controlIndex.get(controlId);
+            const controlLabel = control?.name || control?.title || controlId;
+            const transverse = entry?.transverse ? 'transverse' : 'targeted';
+            const undue = stringifyList(entry?.avantagesIndus || []);
+            return `${controlLabel} [${transverse}]${undue ? ` -> ${undue}` : ''}`;
+        }).filter(Boolean).join(' || ');
+
+        const aggravatingGroup1 = stringifyList(risk?.aggravatingFactors?.group1 || []);
+        const aggravatingGroup2 = stringifyList(risk?.aggravatingFactors?.group2 || []);
+        const linkedActionPlanIds = (Array.isArray(risk?.actionPlans) ? risk.actionPlans : [])
+            .map((planRef) => {
+                if (planRef && typeof planRef === 'object') {
+                    return normalizeId(planRef.id);
+                }
+                return normalizeId(planRef);
+            })
+            .filter(Boolean)
+            .join(' | ');
 
         return {
             'ID du risque': riskId,
+            'Titre': risk?.titre || '',
+            'Description': risk?.description || '',
+            'Exemple': risk?.example || '',
+            'Commentaire': risk?.comment || '',
+            'Processus principal': resolveProcessLabel(risk?.processus),
+            'Sous-processus principal': resolveSubProcessLabel(risk?.processus, risk?.sousProcessus),
+            'Processus associés': processList.map(resolveProcessLabel).filter(Boolean).join(' | '),
+            'Sous-processus associés': subProcessList.map((subProcess) => resolveSubProcessLabel(risk?.processus, subProcess)).filter(Boolean).join(' | '),
             'Entités concernées': entities,
             'Statut du risque': riskStatus || '',
+            'Statut brut (valeur)': riskStatusRaw,
             'Type de corruption': corruptionLabel || '',
+            'Types de corruption (multi)': mapListToLabels(corruptionTypes, rms?.config?.riskTypes),
+            "Exposition à la corruption": mapListToLabels(corruptionExposureTypes, rms?.config?.corruptionExposureTypes),
+            'Mode de corruption': mapListToLabels(corruptionModes, rms?.config?.corruptionModes),
+            'Population cible': mapListToLabels(targetAudiences, rms?.config?.targetAudiences),
             'Tiers': tiers,
+            'Avantages indus': stringifyList(risk?.avantagesIndus || []),
+            'Avantages attendus': stringifyList(risk?.avantagesAttendus || []),
             'Scénario': risk?.description || risk?.titre || '',
             'Probabilité brut': probBrut || '',
             'Impact brut': impactBrut || '',
             'Niveau du risque brut': toDisplayScore(baseBrutScore),
             "Coefficient d'aggravation": toDisplayScore(aggravatingCoefficient),
+            "Facteurs aggravants - groupe 1": aggravatingGroup1,
+            "Facteurs aggravants - groupe 2": aggravatingGroup2,
             'Niveau du risque brut aggravé': toDisplayScore(aggravatedBrutScore),
             'Niveau de maîtrise': mitigationLabel || '',
+            'Probabilité nette': probNet || '',
+            'Impact net': impactNet || '',
             'Niveau du risque net': `${toDisplayScore(riskNetScore)}${netLevelLabel ? ` (${netLevelLabel})` : ''}`,
+            'IDs des contrôles rattachés': controlIds.map((id) => normalizeId(id)).filter(Boolean).join(' | '),
+            'Noms des contrôles rattachés': controlNames,
+            'Affectation contrôles détaillée': controlAssignmentDetails,
+            "IDs des plans d'action (champ risque)": linkedActionPlanIds,
             "Plans d'action rattachés": relatedPlanTitles,
+            "IDs des plans d'action rattachés": relatedPlanIds,
             "Propriétaire du plan d'action": relatedPlanOwners,
             "Date de fin du plan d'action": relatedPlanDueDates,
             "Statut du plan d'action": relatedPlanStatuses
@@ -1955,12 +2064,27 @@ function exportReportsRisksXlsx() {
                 }
             }
 
-            worksheet['!cols'] = [
-                { wch: 14 }, { wch: 24 }, { wch: 18 }, { wch: 24 }, { wch: 24 },
-                { wch: 45 }, { wch: 16 }, { wch: 14 }, { wch: 20 }, { wch: 18 },
-                { wch: 26 }, { wch: 18 }, { wch: 22 }, { wch: 32 }, { wch: 25 },
-                { wch: 20 }, { wch: 20 }
-            ];
+            const columnWidths = {
+                'ID du risque': 14,
+                Titre: 34,
+                Description: 45,
+                Exemple: 32,
+                Commentaire: 32,
+                'Processus principal': 24,
+                'Sous-processus principal': 24,
+                'Processus associés': 28,
+                'Sous-processus associés': 28,
+                'Entités concernées': 26,
+                'Statut du risque': 18,
+                'Type de corruption': 24,
+                Tiers: 24,
+                Scénario: 45,
+                "Plans d'action rattachés": 32,
+                "Noms des contrôles rattachés": 30,
+                'Affectation contrôles détaillée': 42
+            };
+            const headers = Object.keys(riskRows[0] || { 'ID du risque': '' });
+            worksheet['!cols'] = headers.map((header) => ({ wch: columnWidths[header] || 22 }));
 
             const filename = `report-risques-${new Date().toISOString().slice(0, 10)}.xlsx`;
             xlsx.writeFile(workbook, filename, { bookType: 'xlsx', cellStyles: true });
