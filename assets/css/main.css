@@ -983,6 +983,27 @@ body.feedback-mode-paused .feedback-panel * {
 
 }
 
+.risk-point.score-overflow {
+    box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.45), 0 6px 16px rgba(192, 57, 43, 0.45);
+}
+
+.risk-point.score-overflow::after {
+    content: '+';
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    background: #c62828;
+    border: 1px solid #fff;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 12px;
+    text-align: center;
+}
+
 .risk-point.brut.aggravating-major {
     background: linear-gradient(135deg, #ffb347, #ff8c00);
 }
