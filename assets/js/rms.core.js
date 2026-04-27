@@ -7680,8 +7680,12 @@ class RiskManagementSystem {
                     const levelRange = brutLevelRanges[brutLevel] || { min: 0, max: 3 };
                     const brutScore = Number.isFinite(netInfo.brutScore) ? netInfo.brutScore : levelRange.min;
                     const netScore = Number.isFinite(netInfo.score) ? netInfo.score : 0;
+                    const matrixScoreCap = 16;
+                    const displayBrutScore = Math.min(brutScore, matrixScoreCap);
+                    const displayNetScore = Math.min(netScore, matrixScoreCap);
+                    const hasScoreOverflow = brutScore > matrixScoreCap || netScore > matrixScoreCap;
                     const rangeSize = Math.max(0.01, levelRange.max - levelRange.min);
-                    const normalizedBrut = Math.max(0, Math.min(0.999, (brutScore - levelRange.min) / rangeSize));
+                    const normalizedBrut = Math.max(0, Math.min(0.999, (displayBrutScore - levelRange.min) / rangeSize));
 
                     const selectedOption = mitigationOptions.find(option => option.value === netInfo.effectiveness);
                     const selectedCoefficient = Math.max(0.25, Math.min(1, Number(selectedOption?.coefficient) || 1));
@@ -7689,7 +7693,7 @@ class RiskManagementSystem {
                     const netMin = levelRange.min * remainingFactor;
                     const netMax = levelRange.max * remainingFactor;
                     const netRange = Math.max(0.01, netMax - netMin);
-                    const normalizedNet = Math.max(0, Math.min(0.999, (netScore - netMin) / netRange));
+                    const normalizedNet = Math.max(0, Math.min(0.999, (displayNetScore - netMin) / netRange));
 
                     const withinCol = Math.max(0.001, Math.min(0.999, 1 - normalizedNet));
                     const withinRow = Math.max(0.001, Math.min(0.999, 1 - normalizedBrut));
@@ -7712,6 +7716,9 @@ class RiskManagementSystem {
                     const point = document.createElement('div');
                     point.className = `risk-point ${viewKey}`;
                     point.dataset.riskId = risk.id;
+                    if (hasScoreOverflow) {
+                        point.classList.add('score-overflow');
+                    }
 
                     const displayTitle = risk.titre || risk.description || 'Not defined';
                     const displayText = risk.description || 'Not defined';
@@ -7774,11 +7781,16 @@ class RiskManagementSystem {
                 }
 
                 let effectiveProb = baseProb;
+                let hasScoreOverflow = false;
 
                 if (viewKey === 'brut') {
                     if (typeof getRiskEffectiveBrutProbability === 'function') {
                         effectiveProb = getRiskEffectiveBrutProbability(risk);
                     }
+                    const brutScore = typeof getRiskBrutScore === 'function'
+                        ? getRiskBrutScore(risk)
+                        : (effectiveProb * rawImpact);
+                    hasScoreOverflow = Number.isFinite(brutScore) && brutScore > 16;
                 }
 
                 const clampedProb = Math.min(4, Math.max(1, effectiveProb || 1));
@@ -7799,6 +7811,9 @@ class RiskManagementSystem {
                 const point = document.createElement('div');
                 point.className = `risk-point ${viewKey}`;
                 point.dataset.riskId = risk.id;
+                if (hasScoreOverflow) {
+                    point.classList.add('score-overflow');
+                }
                 const displayTitle = risk.titre || risk.description || 'Not defined';
                 const displayText = risk.description || 'Not defined';
                 const processLabel = risk?.processus && String(risk.processus).trim()
