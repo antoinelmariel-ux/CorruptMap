@@ -7783,7 +7783,7 @@ class RiskManagementSystem {
                         point.classList.add('active-point');
                     }
                     point.setAttribute('aria-label', `${config.label} : ${displayTitle}`);
-                    point.onclick = () => this.selectRisk(risk.id);
+                    point.onclick = () => this.selectRisk(risk.id, { preferredView: viewKey });
                     grid.appendChild(point);
 
                     const diameter = point.offsetWidth;
@@ -7869,7 +7869,7 @@ class RiskManagementSystem {
                     point.classList.add('active-point');
                 }
                 point.setAttribute('aria-label', `${config.label} : ${displayTitle}`);
-                point.onclick = () => this.selectRisk(risk.id);
+                point.onclick = () => this.selectRisk(risk.id, { preferredView: viewKey });
                 if (viewKey === 'brut' && window.matrixEditMode) {
                     point.draggable = true;
                     point.addEventListener('dragstart', (event) => {
@@ -8044,13 +8044,19 @@ class RiskManagementSystem {
         });
     }
 
-    selectRisk(riskId) {
+    selectRisk(riskId, options = {}) {
         const targetId = String(riskId);
         const risk = this.risks.find(r => idsEqual(r.id, targetId));
         if (!risk) return;
         this.selectedRiskId = risk.id;
 
-        const activeView = this.currentView === 'net' ? 'net' : 'brut';
+        const requestedView = typeof options === 'string' ? options : options?.preferredView;
+        const activeView = requestedView === 'net'
+            ? 'net'
+            : (requestedView === 'brut'
+                ? 'brut'
+                : (this.currentView === 'net' ? 'net' : 'brut'));
+        this.currentView = activeView;
         const activeViewContainer = document.querySelector(`.matrix-container[data-view="${activeView}"]`);
         const riskItems = Array.from(document.querySelectorAll('.risk-item[data-risk-id]'));
         document.querySelectorAll('.risk-point').forEach(point => {
@@ -8129,7 +8135,10 @@ class RiskManagementSystem {
 
     updateRiskDetailsList() {
         const baseRisks = Array.isArray(this.risks) ? this.risks : [];
-        const filteredRisks = this.getFilteredRisks(baseRisks);
+        const filteredRisks = this.getFilteredRisks(baseRisks).filter((risk) => {
+            const riskStatus = this.normalizeStatusValue('risk', risk?.statut, risk?.status, risk?.statusLabel, risk?.state);
+            return riskStatus !== 'archive' && riskStatus !== 'not-included';
+        });
 
         const viewConfigs = {
             brut: {
@@ -8270,7 +8279,7 @@ class RiskManagementSystem {
                 const metaDetails = `#${risk.id} • Processus: ${processOrSubProcess} • Tiers: ${tiersLabel || 'Not defined'} • Type: ${typeLabel}`;
 
                 return `
-                    <div class="risk-item" data-risk-id="${risk.id}" onclick='rms.selectRisk(${JSON.stringify(risk.id)})'>
+                    <div class="risk-item" data-risk-id="${risk.id}" onclick='rms.selectRisk(${JSON.stringify(risk.id)}, { preferredView: ${JSON.stringify(mode)} })'>
                         <div class="risk-item-header">
                             <div class="risk-item-title-wrap">
                                 <div class="risk-item-title">${escapeHtml(risk.titre || risk.description || 'Untitled')}</div>
