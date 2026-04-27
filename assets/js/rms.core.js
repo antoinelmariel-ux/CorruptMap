@@ -7626,6 +7626,7 @@ class RiskManagementSystem {
             if (!grid) return;
 
             grid.querySelectorAll('.risk-point').forEach(p => p.remove());
+            const pointsByDisplayCell = new Map();
             if (viewKey === 'brut') {
                 grid.querySelectorAll('.matrix-cell').forEach(cell => {
                     cell.ondragover = null;
@@ -7775,6 +7776,18 @@ class RiskManagementSystem {
                     point.style.left = `calc(${leftPercent}% + ${dx}px)`;
                     point.style.bottom = `calc(${bottomPercent}% + ${dy}px)`;
                     point.style.transform = 'translate(-50%, 50%)';
+
+                    const displayCellKey = `${rowIndex}-${colIndex}`;
+                    const displayCellCenterLeft = ((colIndex + 0.5) / mitigationOrder.length) * 100;
+                    const displayCellCenterBottom = ((brutLevelsOrder.length - rowIndex - 0.5) / brutLevelsOrder.length) * 100;
+                    if (!pointsByDisplayCell.has(displayCellKey)) {
+                        pointsByDisplayCell.set(displayCellKey, []);
+                    }
+                    pointsByDisplayCell.get(displayCellKey).push({
+                        point,
+                        centerLeft: displayCellCenterLeft,
+                        centerBottom: displayCellCenterBottom
+                    });
                     return;
                 }
 
@@ -7866,6 +7879,46 @@ class RiskManagementSystem {
                 point.style.left = `calc(${leftPercent}% + ${dx}px)`;
                 point.style.bottom = `calc(${bottomPercent}% + ${dy}px)`;
                 point.style.transform = 'translate(-50%, 50%)';
+
+                const displayCellKey = `${clampedProb}-${clampedImpact}`;
+                if (!pointsByDisplayCell.has(displayCellKey)) {
+                    pointsByDisplayCell.set(displayCellKey, []);
+                }
+                pointsByDisplayCell.get(displayCellKey).push({
+                    point,
+                    centerLeft: leftPercent,
+                    centerBottom: bottomPercent
+                });
+            });
+
+            pointsByDisplayCell.forEach(pointsInCell => {
+                if (!Array.isArray(pointsInCell) || pointsInCell.length === 0) {
+                    return;
+                }
+
+                const [{ centerLeft, centerBottom }] = pointsInCell;
+                if (pointsInCell.length === 1) {
+                    const singlePoint = pointsInCell[0].point;
+                    singlePoint.style.left = `${centerLeft}%`;
+                    singlePoint.style.bottom = `${centerBottom}%`;
+                    singlePoint.style.transform = 'translate(-50%, 50%)';
+                    return;
+                }
+
+                const gridSize = Math.ceil(Math.sqrt(pointsInCell.length));
+                pointsInCell.forEach((entry, index) => {
+                    const row = Math.floor(index / gridSize);
+                    const col = index % gridSize;
+                    const diameter = entry.point.offsetWidth;
+                    const margin = 4;
+                    const step = diameter + margin;
+                    const dx = (col - (gridSize - 1) / 2) * step;
+                    const dy = (row - (gridSize - 1) / 2) * step;
+
+                    entry.point.style.left = `calc(${centerLeft}% + ${dx}px)`;
+                    entry.point.style.bottom = `calc(${centerBottom}% + ${dy}px)`;
+                    entry.point.style.transform = 'translate(-50%, 50%)';
+                });
             });
         });
     }
