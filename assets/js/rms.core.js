@@ -7550,9 +7550,7 @@ class RiskManagementSystem {
                             cell.dataset.subRow = String(subRow);
                             cell.dataset.subCol = String(subCol);
 
-                            const withinBandFactor = subCol === 0 ? 0.25 : 0.75;
-                            const representativeScore = netBandMin + ((netBandMax - netBandMin) * withinBandFactor);
-                            const primaryLevel = getSeverityClassFromScore(representativeScore);
+                            const primaryLevel = getSeverityClassFromScore(netBandMax);
                             cell.classList.add(primaryLevel);
 
                             if (subCol === 0) cell.classList.add('merged-right');
@@ -7695,8 +7693,10 @@ class RiskManagementSystem {
                     const netRange = Math.max(0.01, netMax - netMin);
                     const normalizedNet = Math.max(0, Math.min(0.999, (displayNetScore - netMin) / netRange));
 
-                    const withinCol = Math.max(0.001, Math.min(0.999, 1 - normalizedNet));
-                    const withinRow = Math.max(0.001, Math.min(0.999, 1 - normalizedBrut));
+                    const colSlot = normalizedNet >= 0.5 ? 0 : 1;
+                    const rowSlot = normalizedBrut >= 0.5 ? 0 : 1;
+                    const withinCol = colSlot === 0 ? 0.25 : 0.75;
+                    const withinRow = rowSlot === 0 ? 0.25 : 0.75;
                     const rawLeftPercent = ((colIndex + withinCol) / mitigationOrder.length) * 100;
                     const rawBottomPercent = ((brutLevelsOrder.length - (rowIndex + withinRow)) / brutLevelsOrder.length) * 100;
                     const leftPercent = Math.max(2.5, Math.min(97.5, rawLeftPercent));
