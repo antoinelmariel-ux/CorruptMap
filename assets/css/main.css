@@ -576,7 +576,7 @@ body.feedback-mode-paused .feedback-panel * {
 
 .matrix-grid.net-grid {
     grid-template-columns: repeat(8, 1fr);
-    grid-template-rows: repeat(8, 1fr);
+    grid-template-rows: repeat(9, 1fr);
 }
 
 .matrix-cell {
