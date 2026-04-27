@@ -992,6 +992,9 @@ const RISK_MULTI_SELECT_CHIP_CONFIG = {
     processus: { containerId: 'processusChips', defaultColor: '#2563eb' },
     sousProcessus: { containerId: 'sousProcessChips', defaultColor: '#2563eb' },
     typeCorruption: { containerId: 'typeCorruptionChips', defaultColor: '#db2777' },
+    corruptionExposure: { containerId: 'corruptionExposureChips', defaultColor: '#7c3aed' },
+    corruptionMode: { containerId: 'corruptionModeChips', defaultColor: '#0ea5e9' },
+    targetAudience: { containerId: 'targetAudienceChips', defaultColor: '#0891b2' },
     tiers: { containerId: 'tiersChips', defaultColor: '#16a34a' }
 };
 
@@ -1258,6 +1261,9 @@ function saveRisk() {
     const processusAssocies = getSelectedValues('processus');
     const sousProcessusAssocies = getSelectedValues('sousProcessus');
     const typesCorruption = getSelectedValues('typeCorruption');
+    const corruptionExposure = getSelectedValues('corruptionExposure');
+    const corruptionMode = getSelectedValues('corruptionMode');
+    const targetAudience = getSelectedValues('targetAudience');
 
     const controlAssignments = selectedControlsForRisk.map(controlId => {
         const key = String(controlId);
@@ -1283,6 +1289,12 @@ function saveRisk() {
         comment: document.getElementById('comment').value,
         typeCorruption: typesCorruption[0] || '',
         typesCorruption,
+        corruptionExposure: corruptionExposure[0] || '',
+        corruptionExposureTypes: corruptionExposure,
+        corruptionMode: corruptionMode[0] || '',
+        corruptionModes: corruptionMode,
+        targetAudience: targetAudience[0] || '',
+        targetAudiences: targetAudience,
         statut: document.getElementById('statut').value,
         tiers: Array.from(document.getElementById('tiers').selectedOptions).map(o => o.value),
         avantagesIndus: [...(riskBenefitsState.undue || [])],
