@@ -332,6 +332,7 @@ class RiskManagementSystem {
             'riskTypes',
             'countries',
             'tiers',
+            'targetAudiences',
             'riskStatuses',
             'actionPlanStatuses',
             'controlTypes',
@@ -572,6 +573,7 @@ class RiskManagementSystem {
             'riskTypes',
             'countries',
             'tiers',
+            'targetAudiences',
             'controlTypes',
             'controlOrigins',
             'controlFrequencies',
@@ -1126,6 +1128,9 @@ class RiskManagementSystem {
         normalized.avantagesIndus = normalizeMultiValues(risk?.avantagesIndus);
         normalized.avantagesAttendus = normalizeMultiValues(risk?.avantagesAttendus);
         normalized.tiers = normalizeMultiValues(risk?.tiers);
+        normalized.corruptionScope = normalizeMultiValues(risk?.corruptionScope);
+        normalized.corruptionMechanism = normalizeMultiValues(risk?.corruptionMechanism);
+        normalized.targetAudience = normalizeMultiValues(risk?.targetAudience);
 
         const controlAssignments = Array.isArray(risk?.controlAssignments) ? risk.controlAssignments : [];
         normalized.controlAssignments = controlAssignments
@@ -2914,6 +2919,7 @@ class RiskManagementSystem {
         fill('processus', this.config.processes, 'Select...');
         this.updateSousProcessusOptions();
         fill('typeCorruption', this.config.riskTypes, 'Select...');
+        fill('targetAudience', this.config.targetAudiences);
         fill('statut', this.config.riskStatuses, 'Select...');
         fill('tiers', this.config.tiers);
         const riskCountriesSelect = document.getElementById('riskCountries');
@@ -3273,6 +3279,7 @@ class RiskManagementSystem {
                 renderer: (body) => this.renderCountryColumnManager(body)
             },
             { key: 'tiers', label: 'Tiers' },
+            { key: 'targetAudiences', label: 'Publics concernés' },
             { key: 'riskStatuses', label: 'Statuts des risques' },
             { key: 'controlTypes', label: 'Types de contrôle' },
             { key: 'controlOrigins', label: 'Origine des contrôles' },
@@ -12093,9 +12100,15 @@ class RiskManagementSystem {
             const processSelect = document.getElementById('processus');
             const subProcessSelect = document.getElementById('sousProcessus');
             const corruptionTypeSelect = document.getElementById('typeCorruption');
+            const corruptionScopeSelect = document.getElementById('corruptionScope');
+            const corruptionMechanismSelect = document.getElementById('corruptionMechanism');
+            const targetAudienceSelect = document.getElementById('targetAudience');
             const processValues = normalizeSelectionValues(risk.processusAssocies, risk.processus);
             const subProcessValues = normalizeSelectionValues(risk.sousProcessusAssocies, risk.sousProcessus);
             const corruptionTypes = normalizeSelectionValues(risk.typesCorruption, risk.typeCorruption);
+            const corruptionScopes = normalizeSelectionValues(risk.corruptionScope);
+            const corruptionMechanisms = normalizeSelectionValues(risk.corruptionMechanism);
+            const targetAudiences = normalizeSelectionValues(risk.targetAudience);
             const tiersValues = normalizeSelectionValues(risk.tiers);
             const entitiesValues = normalizeSelectionValues(risk.paysExposes);
             if (processSelect) {
@@ -12121,6 +12134,30 @@ class RiskManagementSystem {
                 });
                 if (typeof syncRiskMultiSelectChipsFromSelect === 'function') {
                     syncRiskMultiSelectChipsFromSelect('typeCorruption');
+                }
+            }
+            if (corruptionScopeSelect) {
+                Array.from(corruptionScopeSelect.options).forEach(opt => {
+                    opt.selected = corruptionScopes.includes(opt.value);
+                });
+                if (typeof syncRiskMultiSelectChipsFromSelect === 'function') {
+                    syncRiskMultiSelectChipsFromSelect('corruptionScope');
+                }
+            }
+            if (corruptionMechanismSelect) {
+                Array.from(corruptionMechanismSelect.options).forEach(opt => {
+                    opt.selected = corruptionMechanisms.includes(opt.value);
+                });
+                if (typeof syncRiskMultiSelectChipsFromSelect === 'function') {
+                    syncRiskMultiSelectChipsFromSelect('corruptionMechanism');
+                }
+            }
+            if (targetAudienceSelect) {
+                Array.from(targetAudienceSelect.options).forEach(opt => {
+                    opt.selected = targetAudiences.includes(opt.value);
+                });
+                if (typeof syncRiskMultiSelectChipsFromSelect === 'function') {
+                    syncRiskMultiSelectChipsFromSelect('targetAudience');
                 }
             }
             const statutSelect = document.getElementById('statut');
