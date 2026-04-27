@@ -7721,7 +7721,7 @@ class RiskManagementSystem {
                     const withinRow = 0.8 - (normalizedBrut * 0.6);
                     const rawLeftPercent = ((colIndex + withinCol) / mitigationOrder.length) * 100;
                     const rawBottomPercent = ((brutLevelsOrder.length - (rowIndex + withinRow)) / brutLevelsOrder.length) * 100;
-                    const netColumns = 8;
+                    const netColumns = 4;
                     const netRows = 9;
                     const snappedColIndex = Math.max(0, Math.min(netColumns - 1, Math.round((rawLeftPercent / 100) * netColumns - 0.5)));
                     const snappedRowFromTop = Math.max(0, Math.min(netRows - 1, Math.round(((100 - rawBottomPercent) / 100) * netRows - 0.5)));
@@ -7796,17 +7796,6 @@ class RiskManagementSystem {
                     point.style.bottom = `calc(${bottomPercent}% + ${dy}px)`;
                     point.style.transform = 'translate(-50%, 50%)';
 
-                    const displayCellKey = `${rowIndex}-${colIndex}`;
-                    const displayCellCenterLeft = ((colIndex + 0.5) / mitigationOrder.length) * 100;
-                    const displayCellCenterBottom = ((brutLevelsOrder.length - rowIndex - 0.5) / brutLevelsOrder.length) * 100;
-                    if (!pointsByDisplayCell.has(displayCellKey)) {
-                        pointsByDisplayCell.set(displayCellKey, []);
-                    }
-                    pointsByDisplayCell.get(displayCellKey).push({
-                        point,
-                        centerLeft: displayCellCenterLeft,
-                        centerBottom: displayCellCenterBottom
-                    });
                     return;
                 }
 
