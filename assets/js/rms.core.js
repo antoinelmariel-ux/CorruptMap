@@ -7540,12 +7540,15 @@ class RiskManagementSystem {
                 const representativeScores = Array.isArray(strictGrossScoresByLevel[level.value]) && strictGrossScoresByLevel[level.value].length
                     ? strictGrossScoresByLevel[level.value]
                     : [level.max];
+                const previousCellsByEffectiveness = new Map();
 
                 representativeScores.forEach((grossScore, subRow) => {
                     mitigationOptions.forEach((option) => {
                         const coefficient = Number(option.coefficient) || 1;
                         const remainingFactor = Math.min(Math.max(coefficient, 0.25), 1);
                         const netScore = grossScore * remainingFactor;
+                        const primaryLevel = getSeverityClassFromScore(netScore);
+                        const createdCells = [];
 
                         for (let subCol = 0; subCol < subCellCount; subCol++) {
                             const cell = document.createElement('div');
@@ -7556,14 +7559,25 @@ class RiskManagementSystem {
                             cell.dataset.subRow = String(subRow);
                             cell.dataset.subCol = String(subCol);
 
-                            const primaryLevel = getSeverityClassFromScore(netScore);
                             cell.classList.add(primaryLevel);
 
                             if (subCol === 0) cell.classList.add('merged-right');
                             if (subCol === 1) cell.classList.add('merged-left');
 
+                            createdCells.push(cell);
                             netGrid.appendChild(cell);
                         }
+
+                        const previousGroup = previousCellsByEffectiveness.get(option.value);
+                        if (previousGroup && previousGroup.levelClass === primaryLevel) {
+                            previousGroup.cells.forEach(previousCell => previousCell.classList.add('merged-bottom'));
+                            createdCells.forEach(currentCell => currentCell.classList.add('merged-top'));
+                        }
+
+                        previousCellsByEffectiveness.set(option.value, {
+                            levelClass: primaryLevel,
+                            cells: createdCells
+                        });
                     });
                 });
             });
