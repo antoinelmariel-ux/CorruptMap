@@ -7701,12 +7701,14 @@ class RiskManagementSystem {
                     const withinRow = 0.8 - (normalizedBrut * 0.6);
                     const rawLeftPercent = ((colIndex + withinCol) / mitigationOrder.length) * 100;
                     const rawBottomPercent = ((brutLevelsOrder.length - (rowIndex + withinRow)) / brutLevelsOrder.length) * 100;
-                    const leftPercent = Math.max(2.5, Math.min(97.5, rawLeftPercent));
-                    const bottomPercent = Math.max(2.5, Math.min(97.5, rawBottomPercent));
+                    const netColumns = 8;
+                    const netRows = 9;
+                    const snappedColIndex = Math.max(0, Math.min(netColumns - 1, Math.round((rawLeftPercent / 100) * netColumns - 0.5)));
+                    const snappedRowFromTop = Math.max(0, Math.min(netRows - 1, Math.round(((100 - rawBottomPercent) / 100) * netRows - 0.5)));
+                    const leftPercent = ((snappedColIndex + 0.5) / netColumns) * 100;
+                    const bottomPercent = ((netRows - snappedRowFromTop - 0.5) / netRows) * 100;
 
-                    const virtualCol = Math.min(3, Math.floor(withinCol * 4));
-                    const virtualRow = Math.min(3, Math.floor(withinRow * 4));
-                    const key = `${colIndex}-${rowIndex}-${virtualCol}-${virtualRow}`;
+                    const key = `${snappedColIndex}-${snappedRowFromTop}`;
                     const index = cellCounts[key] || 0;
                     cellCounts[key] = index + 1;
                     const slots = cellCounts[key];
