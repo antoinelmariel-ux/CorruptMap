@@ -7530,38 +7530,42 @@ class RiskManagementSystem {
             };
 
             const subCellCount = 2;
+            const strictGrossScoresByLevel = {
+                critique: [16, 12],
+                fort: [9, 8, 6],
+                modere: [4, 3],
+                faible: [2, 1]
+            };
             brutLevels.forEach(level => {
-                const levelSpan = level.max - level.min;
+                const representativeScores = Array.isArray(strictGrossScoresByLevel[level.value]) && strictGrossScoresByLevel[level.value].length
+                    ? strictGrossScoresByLevel[level.value]
+                    : [level.max];
 
-                for (let subRow = 0; subRow < subCellCount; subRow++) {
+                representativeScores.forEach((grossScore, subRow) => {
                     mitigationOptions.forEach((option) => {
                         const coefficient = Number(option.coefficient) || 1;
                         const remainingFactor = Math.min(Math.max(coefficient, 0.25), 1);
-                        const grossBandMax = level.max - ((levelSpan / subCellCount) * subRow);
-                        const grossBandMin = level.max - ((levelSpan / subCellCount) * (subRow + 1));
-                        const netBandMin = grossBandMin * remainingFactor;
-                        const netBandMax = grossBandMax * remainingFactor;
+                        const netScore = grossScore * remainingFactor;
 
                         for (let subCol = 0; subCol < subCellCount; subCol++) {
                             const cell = document.createElement('div');
                             cell.className = 'matrix-cell';
                             cell.dataset.brutLevel = level.value;
+                            cell.dataset.grossScore = String(grossScore);
                             cell.dataset.effectiveness = option.value;
                             cell.dataset.subRow = String(subRow);
                             cell.dataset.subCol = String(subCol);
 
-                            const primaryLevel = getSeverityClassFromScore(netBandMax);
+                            const primaryLevel = getSeverityClassFromScore(netScore);
                             cell.classList.add(primaryLevel);
 
                             if (subCol === 0) cell.classList.add('merged-right');
                             if (subCol === 1) cell.classList.add('merged-left');
-                            if (subRow === 0) cell.classList.add('merged-bottom');
-                            if (subRow === 1) cell.classList.add('merged-top');
 
                             netGrid.appendChild(cell);
                         }
                     });
-                }
+                });
             });
             const colLabels = document.getElementById('matrixNetColLabels');
             if (colLabels) {
