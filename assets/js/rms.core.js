@@ -9505,59 +9505,42 @@ class RiskManagementSystem {
                 return a.label.localeCompare(b.label, 'fr', { sensitivity: 'base' });
             });
 
-            const formatProcessAxisLabel = (rawLabel) => {
-                const source = String(rawLabel || '').trim();
-                if (!source) {
-                    return ['Not defined'];
-                }
-
-                const words = source.split(/\s+/).filter(Boolean);
-                const maxLineLength = 14;
-                const maxLines = 3;
-                const lines = [];
-                let currentLine = '';
-
-                words.forEach((word) => {
-                    if (!currentLine) {
-                        currentLine = word;
-                        return;
-                    }
-
-                    if (`${currentLine} ${word}`.length <= maxLineLength) {
-                        currentLine = `${currentLine} ${word}`;
-                    } else {
-                        lines.push(currentLine);
-                        currentLine = word;
-                    }
-                });
-
-                if (currentLine) {
-                    lines.push(currentLine);
-                }
-
-                if (lines.length > maxLines) {
-                    const kept = lines.slice(0, maxLines);
-                    kept[maxLines - 1] = `${kept[maxLines - 1].slice(0, Math.max(maxLineLength - 1, 1)).trim()}…`;
-                    return kept;
-                }
-
-                return lines;
-            };
-
             if (combinedCanvas) {
                 const totalCount = sortedEntries.reduce((sum, entry) => sum + entry.count, 0);
                 const hasProcessData = sortedEntries.some(entry => entry.count > 0);
-                const labels = sortedEntries.map(entry => formatProcessAxisLabel(entry.label));
-                const counts = sortedEntries.map(entry => entry.count);
-                const medians = sortedEntries.map(entry => Number(entry.median.toFixed(2)));
+                const maxVisibleProcesses = 8;
+                const visibleEntries = sortedEntries.slice(0, maxVisibleProcesses);
+                const hiddenEntries = sortedEntries.slice(maxVisibleProcesses);
 
-                const metadata = sortedEntries.map(entry => ({
+                if (hiddenEntries.length > 0) {
+                    const hiddenCount = hiddenEntries.reduce((sum, entry) => sum + entry.count, 0);
+                    const hiddenMedians = hiddenEntries
+                        .map((entry) => Number(entry.median))
+                        .filter((value) => Number.isFinite(value));
+                    const hiddenMedian = hiddenMedians.length
+                        ? hiddenMedians.reduce((sum, value) => sum + value, 0) / hiddenMedians.length
+                        : 0;
+
+                    visibleEntries.push({
+                        label: `Others (${hiddenEntries.length})`,
+                        count: hiddenCount,
+                        median: hiddenMedian,
+                        maxScore: hiddenEntries.reduce((max, entry) => Math.max(max, entry.maxScore || 0), 0)
+                    });
+                }
+
+                const labels = visibleEntries.map(entry => {
+                    const normalized = String(entry.label || '').trim();
+                    if (!normalized) {
+                        return 'Not defined';
+                    }
+                    return normalized.length > 44 ? `${normalized.slice(0, 43).trim()}…` : normalized;
+                });
+                const counts = visibleEntries.map(entry => entry.count);
+                const metadata = visibleEntries.map(entry => ({
                     ...entry,
                     share: totalCount > 0 ? entry.count / totalCount : 0
                 }));
-
-                const scoreLabel = scoreMode === 'brut' ? 'Median gross score' : 'Median net score';
-                const maxTheoreticalScore = 16;
 
                 const combinedData = {
                     labels,
@@ -9566,29 +9549,12 @@ class RiskManagementSystem {
                             type: 'bar',
                             label: 'Number of risks',
                             data: counts,
-                            backgroundColor: counts.map(() => 'rgba(52, 152, 219, 0.6)'),
+                            backgroundColor: counts.map(() => 'rgba(52, 152, 219, 0.65)'),
                             borderColor: counts.map(() => 'rgba(52, 152, 219, 1)'),
                             borderWidth: hasProcessData ? 1.5 : 0,
                             borderRadius: 6,
-                            maxBarThickness: 48,
+                            maxBarThickness: 28,
                             minBarLength: 2,
-                            yAxisID: 'y',
-                            metadata
-                        },
-                        {
-                            type: 'line',
-                            label: scoreLabel,
-                            data: medians,
-                            borderColor: 'rgba(231, 76, 60, 1)',
-                            backgroundColor: 'rgba(231, 76, 60, 0.15)',
-                            yAxisID: 'y1',
-                            fill: false,
-                            tension: 0.25,
-                            pointRadius: 4,
-                            pointHoverRadius: 6,
-                            pointBackgroundColor: 'rgba(231, 76, 60, 1)',
-                            pointBorderColor: '#ffffff',
-                            borderWidth: 2,
                             metadata
                         }
                     ]
@@ -9597,22 +9563,13 @@ class RiskManagementSystem {
                 const combinedOptions = {
                     responsive: true,
                     maintainAspectRatio: false,
+                    indexAxis: 'y',
                     interaction: {
-                        mode: 'index',
-                        intersect: false
+                        mode: 'nearest',
+                        intersect: true
                     },
                     scales: {
                         x: {
-                            ticks: {
-                                autoSkip: false,
-                                maxRotation: 0,
-                                minRotation: 0,
-                                font: {
-                                    size: 11
-                                }
-                            }
-                        },
-                        y: {
                             beginAtZero: true,
                             title: {
                                 display: true,
@@ -9620,29 +9577,32 @@ class RiskManagementSystem {
                             },
                             ticks: {
                                 precision: 0
+                            },
+                            grid: {
+                                color: 'rgba(148, 163, 184, 0.18)'
                             }
                         },
-                        y1: {
-                            beginAtZero: true,
-                            position: 'right',
-                            grid: {
-                                drawOnChartArea: false
+                        y: {
+                            ticks: {
+                                maxRotation: 0,
+                                minRotation: 0,
+                                font: {
+                                    size: 11
+                                }
                             },
-                            suggestedMax: maxTheoreticalScore,
-                            title: {
-                                display: true,
-                                text: scoreLabel
+                            grid: {
+                                display: false
                             }
                         }
                     },
                     plugins: {
                         legend: {
-                            display: true,
+                            display: false,
                             position: 'bottom'
                         },
                         tooltip: {
-                            mode: 'index',
-                            intersect: false,
+                            mode: 'nearest',
+                            intersect: true,
                             callbacks: {
                                 title: (items) => {
                                     if (!Array.isArray(items) || items.length === 0) {
@@ -9654,18 +9614,12 @@ class RiskManagementSystem {
                                 },
                                 label: (context) => {
                                     const entry = context?.dataset?.metadata?.[context.dataIndex];
-                                    if (context.dataset.type === 'line') {
-                                        const value = entry ? entry.median : context.parsed.y;
-                                        const formatted = Number(value || 0).toFixed(1).replace('.', ',');
-                                        return `${scoreLabel} : ${formatted}`;
-                                    }
-                                    if (context.dataset.type === 'bar') {
-                                        const value = Number(context.raw) || 0;
-                                        const plural = value > 1 ? 'risks' : 'risk';
-                                        const share = entry ? Math.round(entry.share * 100) : (totalCount > 0 ? Math.round((value / totalCount) * 100) : 0);
-                                        return `${value} ${plural} (${share}%)`;
-                                    }
-                                    return `${context.dataset.label}: ${context.formattedValue}`;
+                                    const value = Number(context.raw) || 0;
+                                    const plural = value > 1 ? 'risks' : 'risk';
+                                    const share = entry ? Math.round(entry.share * 100) : (totalCount > 0 ? Math.round((value / totalCount) * 100) : 0);
+                                    const scoreDescriptor = scoreMode === 'brut' ? 'gross' : 'net';
+                                    const formattedMedian = Number(entry?.median || 0).toFixed(1).replace('.', ',');
+                                    return `${value} ${plural} (${share}%) • Median ${scoreDescriptor} score: ${formattedMedian}`;
                                 }
                             }
                         },
