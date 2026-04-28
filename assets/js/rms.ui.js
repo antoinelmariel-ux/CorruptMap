@@ -2098,6 +2098,9 @@ function bindEvents() {
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
+                if (modal.id === 'riskModal') {
+                    return;
+                }
                 if (modal.id === 'interviewModal' && window.rms && typeof rms.closeInterviewModal === 'function') {
                     rms.closeInterviewModal();
                     return;
