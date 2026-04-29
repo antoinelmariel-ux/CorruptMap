@@ -1444,7 +1444,33 @@ function encodePdfString(value) {
     return buffer;
 }
 
-function triggerBlobDownload(blob, filename) {
+async function triggerBlobDownload(blob, filename) {
+    if (window.isSecureContext && typeof window.showSaveFilePicker === 'function') {
+        try {
+            const extension = typeof filename === 'string' && filename.includes('.')
+                ? filename.split('.').pop().toLowerCase()
+                : '';
+            const mimeType = (blob && blob.type) || 'application/octet-stream';
+            const pickerOptions = {
+                suggestedName: filename || 'download',
+                types: [{
+                    description: extension ? `${extension.toUpperCase()} file` : 'File',
+                    accept: { [mimeType]: extension ? [`.${extension}`] : ['.*'] }
+                }]
+            };
+            const fileHandle = await window.showSaveFilePicker(pickerOptions);
+            const writable = await fileHandle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+            return;
+        } catch (error) {
+            if (error && error.name === 'AbortError') {
+                return;
+            }
+            console.warn('showSaveFilePicker unavailable, fallback to default download.', error);
+        }
+    }
+
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
