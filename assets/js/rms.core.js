@@ -377,7 +377,7 @@ class RiskManagementSystem {
             config.riskStatuses = [
                 { value: 'brouillon', label: 'Draft' },
                 { value: 'a-valider', label: 'To validate' },
-                { value: 'validé', label: 'Validated' },
+                { value: 'validated', label: 'Validated' },
                 { value: 'archive', label: 'Archived' },
                 { value: 'not-included', label: 'Not included' }
             ];
@@ -989,7 +989,7 @@ class RiskManagementSystem {
             risk: {
                 brouillon: ['draft'],
                 'a-valider': ['a-valider', 'a valider', 'to-validate', 'to validate'],
-                'validé': ['valide', 'validee', 'validé', 'valida', 'validate', 'validated'],
+                'validated': ['valide', 'validee', 'validé', 'valida', 'validate', 'validated'],
                 archive: ['archive', 'archived'],
                 'not-included': ['not included', 'non included', 'non-included', 'not-included', 'na', 'n/a']
             },
@@ -8307,7 +8307,7 @@ class RiskManagementSystem {
 
     // Dashboard functions
     updateDashboard() {
-        const validatedRisks = this.getRisksByStatus('validé');
+        const validatedRisks = this.getRisksByStatus('validated');
         const stats = this.calculateStats(validatedRisks);
         const metrics = this.computeDashboardMetrics(validatedRisks, stats);
 
@@ -8600,7 +8600,7 @@ class RiskManagementSystem {
     }
 
     getDashboardExportData() {
-        const validatedRisks = this.getRisksByStatus('validé');
+        const validatedRisks = this.getRisksByStatus('validated');
         const stats = this.calculateStats(validatedRisks);
         const metrics = this.computeDashboardMetrics(validatedRisks, stats);
         const filteredRisks = this.getFilteredRisks(Array.isArray(validatedRisks) ? validatedRisks : []);
@@ -9163,7 +9163,7 @@ class RiskManagementSystem {
                     risk?.statusLabel,
                     risk?.state
                 );
-                if (riskStatus !== 'validé') {
+                if (riskStatus !== 'validated') {
                     return null;
                 }
 
@@ -9822,7 +9822,7 @@ class RiskManagementSystem {
                 ? risk.tiers.map(tier => resolveLabel(tierMap, tier))
                 : [];
             const riskStatusLabel = this.getStatusLabel('risk', riskStatusValue, risk?.statusLabel, risk?.status, risk?.statut);
-            const riskBadgeClass = riskStatusValue === 'validé'
+            const riskBadgeClass = riskStatusValue === 'validated'
                 ? 'success'
                 : (riskStatusValue === 'archive' ? 'danger' : 'warning');
             const processLabel = this.getProcessLabel(risk.processus) || '';
