@@ -521,7 +521,7 @@ Examples:
 - How do you determine their compensation amount?
 - How do you document the reality of the service provided?`,
         contournement: `**In your opinion, how could a malicious actor bypass existing controls?**`,
-        proba: `**Ultimately, what is the likelihood that a corruption risk will arise in your scope of activity?**
+        proba: `**Ultimately, what is the Probability that a corruption risk will arise in your scope of activity?**
 - Seen before in the sector?
 - Does it seem credible in certain specific countries?
 - Have you already been aware of solicitations of any kind?
