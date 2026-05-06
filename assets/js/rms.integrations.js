@@ -1707,7 +1707,7 @@ function exportRisksAssessmentCsv() {
 
     const headers = [
         'id', 'titre', 'description', 'processus', 'sousProcessus', 'typeCorruption', 'statut',
-        'probBrut', 'impactBrut', 'probNet', 'impactNet', 'mitigationEffectiveness',
+        'probBrut', 'impactBrut', 'probNet', 'impactNet', 'mitigationEffectiveness', 'probPost', 'impactPost', 'postActionMitigationEffectiveness',
         'controls', 'actionPlans', 'tiers', 'paysExposes', 'dateCreation'
     ];
     const lines = [
@@ -1726,6 +1726,9 @@ function exportRisksAssessmentCsv() {
                 risk.probNet ?? '',
                 risk.impactNet ?? '',
                 risk.mitigationEffectiveness ?? '',
+                risk.probPost ?? '',
+                risk.impactPost ?? '',
+                risk.postActionMitigationEffectiveness ?? '',
                 (risk.controls || []).join('|'),
                 (risk.actionPlans || []).join('|'),
                 (risk.tiers || []).join('|'),
@@ -2262,6 +2265,9 @@ function importRisksAssessmentCsv() {
                     probNet: toIntScore(row.probNet, toIntScore(row.probBrut, 2)),
                     impactNet: toIntScore(row.impactNet, toIntScore(row.impactBrut, 2)),
                     mitigationEffectiveness: row.mitigationEffectiveness || '',
+                    probPost: toIntScore(row.probPost, toIntScore(row.probNet, toIntScore(row.probBrut, 2))),
+                    impactPost: toIntScore(row.impactPost, toIntScore(row.impactNet, toIntScore(row.impactBrut, 2))),
+                    postActionMitigationEffectiveness: row.postActionMitigationEffectiveness || row.mitigationEffectiveness || '',
                     controls: parseIds(row.controls),
                     actionPlans: parseIds(row.actionPlans),
                     tiers: row.tiers ? row.tiers.split('|').map(v => v.trim()).filter(Boolean) : [],
@@ -3080,6 +3086,8 @@ function applyPatch() {
                       impactBrut,
                       probNet,
                       impactNet,
+                      probPost: probNet,
+                      impactPost: impactNet,
                       statut,
                       controls,
                       actionPlans,
@@ -3097,6 +3105,7 @@ function applyPatch() {
                       risk.mitigationEffectiveness = typeof normalizeMitigationEffectiveness === 'function'
                         ? normalizeMitigationEffectiveness(mitigationEffectivenessRaw)
                         : mitigationEffectivenessRaw;
+                      risk.postActionMitigationEffectiveness = risk.mitigationEffectiveness;
                     }
 
                     if (aggravatingCoefficient !== undefined) {
@@ -3139,8 +3148,9 @@ function applyPatch() {
                         normalizedRisk.actionPlans = [];
                       }
                       if (normalizedRisk.actionPlans.length === 0) {
-                        normalizedRisk.probPost = normalizedRisk.probNet;
-                        normalizedRisk.impactPost = normalizedRisk.impactNet;
+                        normalizedRisk.probPost = normalizedRisk.probPost || normalizedRisk.probNet;
+                        normalizedRisk.impactPost = normalizedRisk.impactPost || normalizedRisk.impactNet;
+                        normalizedRisk.postActionMitigationEffectiveness = normalizedRisk.postActionMitigationEffectiveness || normalizedRisk.mitigationEffectiveness;
                       }
                       return normalizedRisk;
                     });

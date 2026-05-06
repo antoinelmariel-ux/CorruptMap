@@ -8,8 +8,9 @@ var currentPointerId = null;
 var lastDragCell = null;
 var netMitigationOptions = [];
 
-function updateNetSeverityBadge(input) {
-    const badge = document.getElementById('netSeverityLabel');
+function updateNetSeverityBadge(input, state = 'net') {
+    const config = RISK_STATE_CONFIG[state] || RISK_STATE_CONFIG.net || {};
+    const badge = document.getElementById(config.severityLabelId || 'netSeverityLabel');
     if (!badge) return;
 
     const numericInput = Number(input);
@@ -57,6 +58,42 @@ function computeCurrentNetScore() {
         : brutScore * mitigationCoefficient;
 }
 
+
+function computeCurrentPostScore() {
+    const brutProb = parseInt(document.getElementById('probBrut')?.value, 10) || 1;
+    const brutImpact = parseInt(document.getElementById('impactBrut')?.value, 10) || 1;
+    const aggravatingCoefficient = typeof getFormAggravatingSelection === 'function'
+        ? Number(getFormAggravatingSelection()?.coefficient) || 1
+        : 1;
+    const safeAggravatingCoefficient = aggravatingCoefficient >= 1 ? aggravatingCoefficient : 1;
+    const brutScore = brutProb * brutImpact * safeAggravatingCoefficient;
+    const mitigationLevel = typeof getMitigationLevelFromColumn === 'function'
+        ? getMitigationLevelFromColumn(document.getElementById('probPost')?.value)
+        : 'inefficace';
+    const mitigationCoefficient = typeof getRiskMitigationCoefficient === 'function'
+        ? getRiskMitigationCoefficient(mitigationLevel)
+        : 1;
+
+    return typeof clampMitigationFactor === 'function'
+        ? brutScore * clampMitigationFactor(mitigationCoefficient)
+        : brutScore * mitigationCoefficient;
+}
+
+function getMaxAllowedMitigationColumn(state) {
+    if (state !== 'post') {
+        return ensureNetMitigationOptions().length || 1;
+    }
+    const netColumn = parseInt(document.getElementById('probNet')?.value, 10);
+    const optionCount = ensureNetMitigationOptions().length || 1;
+    return Math.min(Math.max(netColumn || optionCount, 1), optionCount);
+}
+
+function clampMitigationColumnForState(value, state = 'net') {
+    const optionCount = ensureNetMitigationOptions().length || 1;
+    const maxAllowed = getMaxAllowedMitigationColumn(state);
+    return Math.min(Math.max(parseInt(value, 10) || 1, 1), Math.min(maxAllowed, optionCount));
+}
+
 function ensureNetMitigationOptions() {
     if (netMitigationOptions.length) {
         return netMitigationOptions;
@@ -74,34 +111,36 @@ function ensureNetMitigationOptions() {
     return netMitigationOptions;
 }
 
-function updateNetSliderUI(probValue) {
-    const slider = document.getElementById('netMitigationSlider');
+function updateNetSliderUI(probValue, state = 'net') {
+    const config = RISK_STATE_CONFIG[state] || RISK_STATE_CONFIG.net || {};
+    const slider = document.getElementById(config.sliderId || 'netMitigationSlider');
     if (!slider) return;
 
     const options = ensureNetMitigationOptions();
-    const numericValue = Math.min(
-        Math.max(parseInt(probValue, 10) || 1, 1),
-        options.length || 1
-    );
+    const numericValue = clampMitigationColumnForState(probValue, state);
     const option = options[numericValue - 1] || options[0];
+    const maxAllowed = getMaxAllowedMitigationColumn(state);
 
-    const marksContainer = document.getElementById('netMitigationMarks');
+    const marksContainer = document.getElementById(config.marksId || 'netMitigationMarks');
     if (marksContainer) {
         const marks = marksContainer.querySelectorAll('.net-slider-mark');
         marks.forEach((mark, index) => {
             const markPosition = index + 1;
             const isActive = markPosition === numericValue;
+            const isDisabled = markPosition > maxAllowed;
             mark.classList.toggle('active', isActive);
             mark.classList.toggle('passed', markPosition < numericValue);
+            mark.classList.toggle('disabled', isDisabled);
             const button = mark.querySelector('.net-slider-mark-button');
             if (button) {
                 button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+                button.disabled = isDisabled;
             }
         });
     }
 
     if (option) {
-        const percentLabel = document.getElementById('netMitigationPercentLabel');
+        const percentLabel = document.getElementById(config.percentLabelId || 'netMitigationPercentLabel');
         if (percentLabel) {
             const coefficientLabel = typeof formatMitigationCoefficient === 'function'
                 ? formatMitigationCoefficient(option.coefficient)
@@ -114,29 +153,34 @@ function updateNetSliderUI(probValue) {
     const progress = max ? ((numericValue - 1) / max) * 100 : 0;
     slider.style.setProperty('--slider-progress', `${progress}%`);
     slider.value = numericValue;
+    slider.max = maxAllowed;
 }
 
 function handleNetSliderChange(event) {
-    const sliderValue = parseInt(event.target?.value, 10) || 1;
-    const state = 'net';
+    const slider = event.target;
+    const state = slider?.dataset?.state || 'net';
+    const sliderValue = clampMitigationColumnForState(slider?.value, state);
+    if (slider && String(slider.value) !== String(sliderValue)) {
+        slider.value = sliderValue;
+    }
     const { impact } = getStateValues(state);
     setStateValues(state, sliderValue, impact);
-    const updatedImpact = document.getElementById('impactNet')?.value || impact;
-    updateNetSliderUI(sliderValue);
-    updateNetSeverityBadge(updatedImpact);
+    updateNetSliderUI(sliderValue, state);
+    updateNetSeverityBadge(state === 'post' ? computeCurrentPostScore() : computeCurrentNetScore(), state);
     setActiveRiskState(state);
 }
 
-function initNetMitigationSlider() {
-    const slider = document.getElementById('netMitigationSlider');
-    const marksContainer = document.getElementById('netMitigationMarks');
+function initMitigationSlider(state = 'net') {
+    const config = RISK_STATE_CONFIG[state] || RISK_STATE_CONFIG.net || {};
+    const slider = document.getElementById(config.sliderId || 'netMitigationSlider');
+    const marksContainer = document.getElementById(config.marksId || 'netMitigationMarks');
     if (!slider || !marksContainer) return;
 
     const options = ensureNetMitigationOptions();
     marksContainer.innerHTML = '';
 
     const applySliderValue = value => {
-        slider.value = value;
+        slider.value = clampMitigationColumnForState(value, state);
         slider.dispatchEvent(new Event('input', { bubbles: true }));
         slider.dispatchEvent(new Event('change', { bubbles: true }));
     };
@@ -170,8 +214,8 @@ function initNetMitigationSlider() {
         marksContainer.appendChild(mark);
     });
 
-    const hiddenMitigation = document.getElementById('mitigationEffectiveness');
-    const hiddenProb = document.getElementById('probNet');
+    const hiddenMitigation = document.getElementById(config.mitigationInputId || 'mitigationEffectiveness');
+    const hiddenProb = document.getElementById(config.probInput || 'probNet');
     const normalized = hiddenMitigation && typeof normalizeMitigationEffectiveness === 'function'
         ? normalizeMitigationEffectiveness(hiddenMitigation.value)
         : null;
@@ -179,20 +223,18 @@ function initNetMitigationSlider() {
     const fallbackColumn = typeof getMitigationColumnFromLevel === 'function'
         ? getMitigationColumnFromLevel(defaultLevel)
         : 1;
-    const sliderValue = Math.min(
-        Math.max(parseInt(hiddenProb?.value, 10) || fallbackColumn, 1),
-        options.length || 1
-    );
+    const sliderValue = clampMitigationColumnForState(parseInt(hiddenProb?.value, 10) || fallbackColumn, state);
 
     slider.min = 1;
-    slider.max = options.length || 1;
+    slider.max = getMaxAllowedMitigationColumn(state);
     slider.step = 1;
     slider.value = sliderValue;
+    slider.dataset.state = state;
 
     if (hiddenProb) {
         hiddenProb.value = sliderValue;
     }
-    if (hiddenMitigation && !hiddenMitigation.value) {
+    if (hiddenMitigation) {
         const optionAtValue = options[sliderValue - 1];
         if (optionAtValue && optionAtValue.value) {
             hiddenMitigation.value = optionAtValue.value;
@@ -204,13 +246,18 @@ function initNetMitigationSlider() {
     slider.addEventListener('input', handleNetSliderChange);
     slider.addEventListener('change', handleNetSliderChange);
 
-    updateNetSliderUI(sliderValue);
+    updateNetSliderUI(sliderValue, state);
+}
+
+function initNetMitigationSlider() {
+    initMitigationSlider('net');
+    initMitigationSlider('post');
 }
 
 function changeMatrixView(view) {
     if (!window.rms) return;
 
-    const targetView = view === 'net' ? 'net' : 'brut';
+    const targetView = ['brut', 'net', 'post'].includes(view) ? view : 'brut';
     rms.currentView = targetView;
 
     document.querySelectorAll('.view-btn').forEach(btn => {
@@ -278,7 +325,7 @@ function calculateScore(type) {
                 : (Math.round(coefficient * 10) / 10).toString().replace('.', ',');
             coefficientDisplay.textContent = formatted;
         }
-    } else if (stateKey === 'net') {
+    } else if (stateKey === 'net' || stateKey === 'post') {
         const brutProb = parseInt(document.getElementById('probBrut')?.value, 10) || 1;
         const brutImpact = parseInt(document.getElementById('impactBrut')?.value, 10) || 1;
         let aggravatingCoefficient = 1;
@@ -291,8 +338,8 @@ function calculateScore(type) {
 
         const probInput = document.getElementById(config.probInput);
         const impactInput = document.getElementById(config.impactInput);
-        const mitigationInput = document.getElementById('mitigationEffectiveness');
-        const currentColumn = probInput ? parseInt(probInput.value, 10) || 1 : 1;
+        const mitigationInput = document.getElementById(config.mitigationInputId || 'mitigationEffectiveness');
+        const currentColumn = probInput ? clampMitigationColumnForState(probInput.value, stateKey) : 1;
         const mitigationLevel = typeof getMitigationLevelFromColumn === 'function'
             ? getMitigationLevelFromColumn(currentColumn)
             : (typeof normalizeMitigationEffectiveness === 'function'
@@ -301,6 +348,9 @@ function calculateScore(type) {
 
         if (mitigationInput) {
             mitigationInput.value = mitigationLevel;
+        }
+        if (probInput) {
+            probInput.value = currentColumn;
         }
 
         const mitigationCoefficient = typeof getRiskMitigationCoefficient === 'function'
@@ -324,8 +374,8 @@ function calculateScore(type) {
             impactInput.value = netImpactValue;
         }
 
-        updateNetSeverityBadge(rawScore);
-        updateNetSliderUI(prob);
+        updateNetSeverityBadge(rawScore, stateKey);
+        updateNetSliderUI(currentColumn, stateKey);
     }
 
     if (rawScore === undefined) {
@@ -348,7 +398,7 @@ function calculateScore(type) {
                 ? formatCoefficient(coefficient)
                 : (Math.round(coefficient * 10) / 10).toString().replace('.', ',');
             coordElement.textContent = `P${prob} × C${formattedCoef} × I${impact}`;
-        } else if (stateKey === 'net') {
+        } else if (stateKey === 'net' || stateKey === 'post') {
             const brutLabel = Number.isFinite(brutScoreReference)
                 ? brutScoreReference.toLocaleString('fr-FR', { maximumFractionDigits: 2 })
                 : '0';
@@ -370,6 +420,9 @@ function calculateScore(type) {
 
     if (stateKey === 'brut') {
         calculateScore('net');
+        calculateScore('post');
+    } else if (stateKey === 'net') {
+        calculateScore('post');
     }
 }
 window.calculateScore = calculateScore;
@@ -480,7 +533,7 @@ function updateMatrixDescription(prob, impact, state = activeRiskEditState) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    if (state === 'net') {
+    if (state === 'net' || state === 'post') {
         const mitigationLevel = typeof getMitigationLevelFromColumn === 'function'
             ? getMitigationLevelFromColumn(prob)
             : (typeof normalizeMitigationEffectiveness === 'function'
@@ -568,11 +621,12 @@ function setActiveRiskState(state) {
     highlightCell(prob, impact, state);
     updateMatrixDescription(prob, impact, state);
 
-    if (state === 'net') {
-        updateNetSeverityBadge(computeCurrentNetScore());
-        const netProbValue = document.getElementById('probNet')?.value;
-        if (netProbValue) {
-            updateNetSliderUI(netProbValue);
+    if (state === 'net' || state === 'post') {
+        updateNetSeverityBadge(state === 'post' ? computeCurrentPostScore() : computeCurrentNetScore(), state);
+        const config = RISK_STATE_CONFIG[state] || {};
+        const probValue = document.getElementById(config.probInput)?.value;
+        if (probValue) {
+            updateNetSliderUI(probValue, state);
         }
     }
     positionAllPoints();
@@ -592,7 +646,7 @@ function getCellFromEvent(event, matrix) {
 
     const prob = Math.min(4, Math.max(1, Math.ceil(x / (rect.width / 4))));
     const state = matrix.dataset.state;
-    if (state === 'net') {
+    if (state === 'net' || state === 'post') {
         const impactInput = document.getElementById('impactNet');
         const lockedImpact = impactInput ? parseInt(impactInput.value, 10) || 1 : 1;
         return { prob, impact: lockedImpact };
@@ -685,7 +739,7 @@ function initRiskEditMatrix() {
     initNetMitigationSlider();
 
     Object.entries(RISK_STATE_CONFIG).forEach(([state, config]) => {
-        if (state === 'net') {
+        if (state === 'net' || state === 'post') {
             highlightedEditCells[state] = null;
             return;
         }
@@ -743,11 +797,15 @@ function initRiskEditMatrix() {
     const initialState = RISK_STATE_CONFIG[activeRiskEditState] ? activeRiskEditState : 'brut';
     setActiveRiskState(initialState);
 
-    updateNetSeverityBadge(computeCurrentNetScore());
-    const netProb = document.getElementById('probNet')?.value;
-    if (netProb) {
-        updateNetSliderUI(netProb);
-    }
+    updateNetSeverityBadge(computeCurrentNetScore(), 'net');
+    updateNetSeverityBadge(computeCurrentPostScore(), 'post');
+    ['net', 'post'].forEach(state => {
+        const config = RISK_STATE_CONFIG[state] || {};
+        const probValue = document.getElementById(config.probInput)?.value;
+        if (probValue) {
+            updateNetSliderUI(probValue, state);
+        }
+    });
     const mitigationValue = document.getElementById('mitigationEffectiveness')?.value;
     if (mitigationValue) {
         updateNetLegendActive(mitigationValue);

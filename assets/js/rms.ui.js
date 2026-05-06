@@ -1185,6 +1185,9 @@ function addNewRisk() {
         const mitigationInput = document.getElementById('mitigationEffectiveness');
         const probNetInput = document.getElementById('probNet');
         const impactNetInput = document.getElementById('impactNet');
+        const postMitigationInput = document.getElementById('postActionMitigationEffectiveness');
+        const probPostInput = document.getElementById('probPost');
+        const impactPostInput = document.getElementById('impactPost');
         const defaultMitigation = typeof DEFAULT_MITIGATION_EFFECTIVENESS === 'string'
             ? DEFAULT_MITIGATION_EFFECTIVENESS
             : 'insuffisant';
@@ -1196,6 +1199,16 @@ function addNewRisk() {
         }
         if (impactNetInput) {
             impactNetInput.value = impactNetInput.value || 1;
+        }
+        if (postMitigationInput) {
+            postMitigationInput.value = defaultMitigation;
+        }
+        if (probPostInput && typeof getMitigationColumnFromLevel === 'function') {
+            const netColumn = parseInt(probNetInput?.value, 10) || getMitigationColumnFromLevel(defaultMitigation);
+            probPostInput.value = Math.min(getMitigationColumnFromLevel(defaultMitigation), netColumn);
+        }
+        if (impactPostInput) {
+            impactPostInput.value = impactPostInput.value || 1;
         }
         document.getElementById('comment').value = '';
         renderAllRiskMultiSelectChips();
@@ -1220,6 +1233,7 @@ function addNewRisk() {
 
         calculateScore('brut');
         calculateScore('net');
+        calculateScore('post');
         updateSelectedControlsDisplay();
         updateSelectedActionPlansDisplay();
     }
@@ -1307,6 +1321,9 @@ function saveRisk() {
         probNet: parseInt(document.getElementById('probNet').value),
         impactNet: parseInt(document.getElementById('impactNet').value),
         mitigationEffectiveness: document.getElementById('mitigationEffectiveness').value,
+        probPost: parseInt(document.getElementById('probPost')?.value || document.getElementById('probNet').value),
+        impactPost: parseInt(document.getElementById('impactPost')?.value || document.getElementById('impactNet').value),
+        postActionMitigationEffectiveness: document.getElementById('postActionMitigationEffectiveness')?.value || document.getElementById('mitigationEffectiveness').value,
         aggravatingFactors,
         aggravatingCoefficient,
         controls: [...selectedControlsForRisk],
@@ -1314,8 +1331,8 @@ function saveRisk() {
         actionPlans: [...selectedActionPlansForRisk]
     };
 
-    formData.probPost = formData.probNet;
-    formData.impactPost = formData.impactNet;
+    formData.probPost = Math.min(formData.probPost || formData.probNet, formData.probNet || formData.probPost || 1);
+    formData.impactPost = formData.impactPost || formData.impactNet;
 
     if (currentEditingRiskId) {
         const targetId = String(currentEditingRiskId);
