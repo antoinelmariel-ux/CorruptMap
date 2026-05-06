@@ -623,6 +623,56 @@
                                 </div>
                             </div>
                         </section>
+
+                        <section class="matrix-container" data-view="post">
+                            <div class="matrix-header">
+                                <h3 class="matrix-title" id="matrixTitlePost">Post Action Plan Risk Matrix</h3>
+                                <div class="matrix-actions">
+                                    <button class="btn btn-secondary" onclick="exportMatrix('post')">
+                                        📸 Capture
+                                    </button>
+                                    <button class="btn btn-secondary" onclick="toggleFullScreen('post')">
+                                        🔍 Full screen
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="matrix-wrapper">
+                                <div class="matrix">
+                                    <div class="matrix-grid" id="matrixGridPost"></div>
+                                    <div class="matrix-net-col-labels" id="matrixPostColLabels"></div>
+                                    <div class="axis-label x-axis">Post action control effectiveness →</div>
+                                    <div class="axis-label y-axis">
+                                        <span class="axis-text">Gross risk level</span>
+                                        <span class="axis-arrow" aria-hidden="true">↑</span>
+                                    </div>
+                                </div>
+
+                                <div class="risk-details-panel">
+                                    <div class="risk-details-title" id="riskDetailsTitlePost">Post action plan risks ranked by score</div>
+                                    <div id="riskDetailsListPost"></div>
+                                </div>
+                            </div>
+
+                            <div class="legend">
+                                <div class="legend-item">
+                                    <div class="legend-color" style="background: linear-gradient(135deg, rgba(46, 204, 113, 0.4), rgba(46, 204, 113, 0.6));"></div>
+                                    <span>Low (&lt; 3)</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-color" style="background: linear-gradient(135deg, rgba(241, 196, 15, 0.4), rgba(241, 196, 15, 0.6));"></div>
+                                    <span>Medium (≥ 3 ; &lt; 6)</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-color" style="background: linear-gradient(135deg, rgba(230, 126, 34, 0.4), rgba(230, 126, 34, 0.6));"></div>
+                                    <span>High (≥ 6 ; &lt; 12)</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-color" style="background: linear-gradient(135deg, rgba(231, 76, 60, 0.5), rgba(231, 76, 60, 0.7));"></div>
+                                    <span>Critical (≥ 12)</span>
+                                </div>
+                            </div>
+                        </section>
                     </div>
                 </div>
             </div>
@@ -911,7 +961,7 @@
             </div>
         </div>
         <footer class="app-footer">
-            <span class="app-version">Version 2.14.139</span>
+            <span class="app-version">Version 2.14.140</span>
         </footer>
     </div>
 
@@ -1542,6 +1592,9 @@
                             <input type="hidden" id="impactBrut" value="1">
                             <input type="hidden" id="probNet" value="2">
                             <input type="hidden" id="impactNet" value="1">
+                            <input type="hidden" id="postActionMitigationEffectiveness" value="insuffisant">
+                            <input type="hidden" id="probPost" value="2">
+                            <input type="hidden" id="impactPost" value="1">
                         </div>
                     </div>
 
@@ -1600,6 +1653,38 @@
                             </button>
                             <div class="controls-grid" id="riskActionPlans" style="margin-top: 15px;">
                                 <!-- Selected action plans will appear here -->
+                            </div>
+                        </div>
+                        <div class="post-action-assessment">
+                            <div class="net-matrix-editor">
+                                <div class="net-matrix-wrapper">
+                                    <div class="net-slider-layout">
+                                        <div class="net-slider-panel" data-state="post">
+                                            <div class="net-slider-header">
+                                                <div class="net-slider-title">Post action plan control level</div>
+                                                <div class="form-helper">Select a control level equal to or stronger than the net risk control level.</div>
+                                            </div>
+                                            <div class="net-slider-track">
+                                                <input type="range" id="postActionMitigationSlider" class="net-slider-input" min="1" max="4" step="1" value="2" aria-label="Post action plan control level">
+                                                <div class="net-slider-marks" id="postActionMitigationMarks"></div>
+                                            </div>
+                                            <div class="net-slider-footer">
+                                                <span class="net-slider-percent" id="postActionMitigationPercentLabel">Coefficient 0,50</span>
+                                                <span class="net-severity-badge" id="postActionSeverityLabel" data-severity="faible">Low Risk</span>
+                                            </div>
+                                        </div>
+                                        <div id="matrixDescriptionPost" class="matrix-description">
+                                            <div class="matrix-description-empty">
+                                                Adjust post action plan control level to visualize expected residual risk after implementation.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="risk-score-card" data-state="post">
+                                    <div class="risk-score-title">Post Action Plan Net Risk</div>
+                                    <div class="risk-score-value" id="scorePost">Score: 0</div>
+                                    <div class="risk-score-meta" id="coordPost">Gross 0 × Coefficient 1,00</div>
+                                </div>
                             </div>
                         </div>
                     </div>

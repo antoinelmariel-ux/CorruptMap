@@ -463,6 +463,77 @@ function getRiskNetInfo(risk) {
     };
 }
 
+
+function getRiskPostActionMitigationEffectiveness(risk) {
+    if (risk && typeof risk === 'object') {
+        const candidates = [
+            risk.postActionMitigationEffectiveness,
+            risk.mitigationEffectivenessPostAction,
+            risk.postActionPlanMitigationEffectiveness,
+            risk.mitigationPostAction,
+            risk.effectivenessPostAction
+        ];
+
+        for (const candidate of candidates) {
+            if (typeof candidate === 'string' && candidate.trim()) {
+                return normalizeMitigationEffectiveness(candidate);
+            }
+        }
+    }
+
+    return getRiskMitigationEffectiveness(risk);
+}
+
+function getRiskPostActionMitigationCoefficient(risk) {
+    const level = typeof risk === 'string' ? normalizeMitigationEffectiveness(risk) : getRiskPostActionMitigationEffectiveness(risk);
+    const entry = MITIGATION_EFFECTIVENESS_SCALE[level];
+    const coefficient = entry?.coefficient;
+    return Number.isFinite(coefficient) ? coefficient : 1;
+}
+
+function getRiskPostActionScore(risk) {
+    const aggravatingCoefficient = typeof getRiskAggravatingCoefficient === 'function'
+        ? getRiskAggravatingCoefficient(risk)
+        : 1;
+    const brutScore = typeof getRiskBrutScore === 'function'
+        ? getRiskBrutScore(risk)
+        : (Number(risk?.probBrut) || 0) * (Number(risk?.impactBrut) || 0) * aggravatingCoefficient;
+    const mitigationFactor = clampMitigationFactor(getRiskPostActionMitigationCoefficient(risk));
+    return brutScore * mitigationFactor;
+}
+
+function getRiskPostActionInfo(risk) {
+    const aggravatingCoefficient = typeof getRiskAggravatingCoefficient === 'function'
+        ? getRiskAggravatingCoefficient(risk)
+        : 1;
+    const rawMitigationCoefficient = getRiskPostActionMitigationCoefficient(risk);
+    const mitigationCoefficient = clampMitigationFactor(rawMitigationCoefficient);
+    const brutScore = typeof getRiskBrutScore === 'function'
+        ? getRiskBrutScore(risk)
+        : (Number(risk?.probBrut) || 0) * (Number(risk?.impactBrut) || 0) * aggravatingCoefficient;
+    const safeAggravatingCoefficient = Number.isFinite(aggravatingCoefficient) && aggravatingCoefficient > 0
+        ? aggravatingCoefficient
+        : 1;
+    const baseBrutScore = brutScore / safeAggravatingCoefficient;
+    const score = brutScore * mitigationCoefficient;
+    const level = getRiskSeverityFromScore(score);
+    const effectiveness = getRiskPostActionMitigationEffectiveness(risk);
+    const label = MITIGATION_EFFECTIVENESS_SCALE[effectiveness]?.label || effectiveness;
+    const reduction = Math.round((1 - mitigationCoefficient) * 100);
+
+    return {
+        score,
+        brutScore,
+        baseBrutScore,
+        coefficient: mitigationCoefficient,
+        aggravatingCoefficient: safeAggravatingCoefficient,
+        level,
+        effectiveness,
+        label,
+        reduction
+    };
+}
+
 function formatMitigationCoefficient(value) {
     const safe = clampMitigationFactor(value);
     return safe.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -476,6 +547,10 @@ window.getMitigationEffectivenessOptions = getMitigationEffectivenessOptions;
 window.getRiskMitigationEffectiveness = getRiskMitigationEffectiveness;
 window.getRiskMitigationCoefficient = getRiskMitigationCoefficient;
 window.getRiskNetScore = getRiskNetScore;
+window.getRiskPostActionMitigationEffectiveness = getRiskPostActionMitigationEffectiveness;
+window.getRiskPostActionMitigationCoefficient = getRiskPostActionMitigationCoefficient;
+window.getRiskPostActionScore = getRiskPostActionScore;
+window.getRiskPostActionInfo = getRiskPostActionInfo;
 window.getRiskSeverityFromScore = getRiskSeverityFromScore;
 window.getRiskBrutLevel = getRiskBrutLevel;
 window.getRiskNetInfo = getRiskNetInfo;

@@ -62,7 +62,28 @@ const RISK_STATE_CONFIG = {
         matrixId: null,
         gridId: null,
         descriptionContainer: 'matrixDescriptionNet',
-        sliderId: 'netMitigationSlider'
+        sliderId: 'netMitigationSlider',
+        mitigationInputId: 'mitigationEffectiveness',
+        marksId: 'netMitigationMarks',
+        percentLabelId: 'netMitigationPercentLabel',
+        severityLabelId: 'netSeverityLabel'
+    },
+    post: {
+        label: 'Post Action Plan Net Risk',
+        probInput: 'probPost',
+        impactInput: 'impactPost',
+        scoreElement: 'scorePost',
+        coordElement: 'coordPost',
+        pointClass: 'post',
+        symbol: 'P',
+        matrixId: null,
+        gridId: null,
+        descriptionContainer: 'matrixDescriptionPost',
+        sliderId: 'postActionMitigationSlider',
+        mitigationInputId: 'postActionMitigationEffectiveness',
+        marksId: 'postActionMitigationMarks',
+        percentLabelId: 'postActionMitigationPercentLabel',
+        severityLabelId: 'postActionSeverityLabel'
     }
 };
 

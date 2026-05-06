@@ -6452,3 +6452,25 @@ tbody tr:hover {
             "comment";
     }
 }
+
+.post-action-assessment {
+    margin-top: 20px;
+}
+
+.risk-point.post {
+    background: linear-gradient(135deg, #2ecc71, #1f8f5f);
+}
+
+.risk-score-card.post {
+    border-color: rgba(46, 204, 113, 0.3);
+}
+
+.net-slider-mark.disabled .net-slider-mark-button {
+    color: rgba(127, 140, 141, 0.65);
+    cursor: not-allowed;
+}
+
+.net-slider-mark.disabled .net-slider-mark-button::before {
+    border-color: rgba(127, 140, 141, 0.25);
+    background: rgba(127, 140, 141, 0.12);
+}
