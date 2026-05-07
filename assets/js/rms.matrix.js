@@ -153,7 +153,7 @@ function updateNetSliderUI(probValue, state = 'net') {
     const progress = max ? ((numericValue - 1) / max) * 100 : 0;
     slider.style.setProperty('--slider-progress', `${progress}%`);
     slider.value = numericValue;
-    slider.max = maxAllowed;
+    slider.max = options.length;
 }
 
 function handleNetSliderChange(event) {
@@ -226,7 +226,7 @@ function initMitigationSlider(state = 'net') {
     const sliderValue = clampMitigationColumnForState(parseInt(hiddenProb?.value, 10) || fallbackColumn, state);
 
     slider.min = 1;
-    slider.max = getMaxAllowedMitigationColumn(state);
+    slider.max = options.length;
     slider.step = 1;
     slider.value = sliderValue;
     slider.dataset.state = state;
