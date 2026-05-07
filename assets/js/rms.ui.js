@@ -1357,7 +1357,7 @@ function saveRisk() {
 
             rms.actionPlans.forEach(plan => {
                 plan.risks = plan.risks || [];
-                if (selectedActionPlansForRisk.includes(plan.id)) {
+                if (selectedActionPlansForRisk.some(id => idsEqual(id, plan.id))) {
                     if (!plan.risks.some(id => idsEqual(id, targetId))) {
                         plan.risks.push(rms.risks[riskIndex].id);
                     }
@@ -1386,10 +1386,10 @@ function saveRisk() {
         });
 
         selectedActionPlansForRisk.forEach(planId => {
-            const plan = rms.actionPlans.find(p => p.id === planId);
+            const plan = rms.actionPlans.find(p => idsEqual(p.id, planId));
             if (plan) {
                 plan.risks = plan.risks || [];
-                if (!plan.risks.includes(newRisk.id)) {
+                if (!plan.risks.some(id => idsEqual(id, newRisk.id))) {
                     plan.risks.push(newRisk.id);
                 }
             }
@@ -1664,20 +1664,20 @@ function updateSelectedActionPlansDisplay() {
         return;
     }
     container.innerHTML = selectedActionPlansForRisk.map(id => {
-        const plan = rms.actionPlans.find(p => p.id === id);
+        const plan = rms.actionPlans.find(p => idsEqual(p.id, id));
         if (!plan) return '';
         const title = plan.title || 'Untitled';
         return `
             <div class="selected-control-item">
-              #${id} - ${title.substring(0, 50)}${title.length > 50 ? '...' : ''}
-              <span class="remove-control" onclick="removeActionPlanFromSelection(${id})">×</span>
+              #${plan.id} - ${title.substring(0, 50)}${title.length > 50 ? '...' : ''}
+              <span class="remove-control" onclick='removeActionPlanFromSelection(${JSON.stringify(id)})'>×</span>
             </div>`;
     }).join('');
 }
 window.updateSelectedActionPlansDisplay = updateSelectedActionPlansDisplay;
 
 function removeActionPlanFromSelection(planId) {
-    selectedActionPlansForRisk = selectedActionPlansForRisk.filter(id => id !== planId);
+    selectedActionPlansForRisk = selectedActionPlansForRisk.filter(id => !idsEqual(id, planId));
     updateSelectedActionPlansDisplay();
     if (rms && typeof rms.markUnsavedChange === 'function') {
         rms.markUnsavedChange('riskForm');
@@ -1717,11 +1717,11 @@ function renderActionPlanSelectionList() {
         const title = (plan.title || '').toLowerCase();
         return String(plan.id).includes(query) || title.includes(query);
     }).map(plan => {
-        const isSelected = selectedActionPlansForRisk.includes(plan.id);
+        const isSelected = selectedActionPlansForRisk.some(id => idsEqual(id, plan.id));
         const title = plan.title || 'Untitled';
         return `
             <div class="risk-list-item">
-              <input type="checkbox" id="action-plan-${plan.id}" ${isSelected ? 'checked' : ''} onchange="toggleActionPlanSelection(${plan.id})">
+              <input type="checkbox" id="action-plan-${plan.id}" ${isSelected ? 'checked' : ''} onchange='toggleActionPlanSelection(${JSON.stringify(plan.id)})'>
               <div class="risk-item-info">
                 <div class="risk-item-title">#${plan.id} - ${title}</div>
               </div>
@@ -1740,7 +1740,7 @@ function closeActionPlanSelector() {
 window.closeActionPlanSelector = closeActionPlanSelector;
 
 function toggleActionPlanSelection(planId) {
-    const index = selectedActionPlansForRisk.indexOf(planId);
+    const index = selectedActionPlansForRisk.findIndex(id => idsEqual(id, planId));
     if (index > -1) {
         selectedActionPlansForRisk.splice(index, 1);
     } else {
@@ -1825,7 +1825,9 @@ function editActionPlan(planId) {
         document.getElementById('planStatus').value = plan.status || '';
         document.getElementById('planDescription').value = plan.description || '';
         document.getElementById('planComment').value = plan.comment || '';
-        selectedRisksForPlan = plan.risks ? [...plan.risks] : [];
+        selectedRisksForPlan = Array.isArray(plan.risks)
+            ? [...plan.risks]
+            : (Array.isArray(plan.riskIds) ? [...plan.riskIds] : []);
         updateSelectedRisksForPlanDisplay();
     }
     document.getElementById('actionPlanModalTitle').textContent = 'Edit Action Plan';
@@ -1844,7 +1846,7 @@ function deleteActionPlan(planId) {
     rms.actionPlans.splice(index,1);
     rms.risks.forEach(risk => {
         if (risk.actionPlans) {
-            risk.actionPlans = risk.actionPlans.filter(id => id !== planId);
+            risk.actionPlans = risk.actionPlans.filter(id => !idsEqual(id, planId));
         }
     });
     rms.saveData();
