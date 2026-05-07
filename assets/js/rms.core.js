@@ -105,9 +105,13 @@ class RiskManagementSystem {
         this.controls = Array.isArray(storedControls) ? storedControls : defaultControls;
 
         const storedActionPlans = this.loadData('actionPlans');
-        this.actionPlans = Array.isArray(storedActionPlans)
+        const initialActionPlans = Array.isArray(storedActionPlans)
             ? storedActionPlans
             : this.getDefaultActionPlans();
+        this.actionPlans = Array.isArray(initialActionPlans)
+            ? initialActionPlans.map(plan => this.normalizeActionPlan(plan))
+            : [];
+        this.reconcileRiskActionPlanLinks();
 
         const storedHistory = this.loadData('history');
         this.history = Array.isArray(storedHistory) ? storedHistory : this.getDefaultHistory();
@@ -1143,6 +1147,7 @@ class RiskManagementSystem {
         normalized.avantagesIndus = normalizeMultiValues(risk?.avantagesIndus);
         normalized.avantagesAttendus = normalizeMultiValues(risk?.avantagesAttendus);
         normalized.tiers = normalizeMultiValues(risk?.tiers);
+        normalized.actionPlans = normalizeMultiValues(risk?.actionPlans);
 
         const controlAssignments = Array.isArray(risk?.controlAssignments) ? risk.controlAssignments : [];
         normalized.controlAssignments = controlAssignments
@@ -1250,6 +1255,64 @@ class RiskManagementSystem {
         ) || 'brouillon';
 
         return normalized;
+    }
+
+    normalizeActionPlan(plan) {
+        if (!plan || typeof plan !== 'object') {
+            return {};
+        }
+
+        const normalized = { ...plan };
+        const riskRefs = Array.isArray(plan.risks)
+            ? plan.risks
+            : (Array.isArray(plan.riskIds) ? plan.riskIds : []);
+        const seen = new Set();
+        normalized.risks = riskRefs.reduce((acc, riskId) => {
+            if (riskId === undefined || riskId === null || riskId === '') {
+                return acc;
+            }
+            const key = String(riskId);
+            if (seen.has(key)) {
+                return acc;
+            }
+            seen.add(key);
+            acc.push(riskId);
+            return acc;
+        }, []);
+        delete normalized.riskIds;
+        return normalized;
+    }
+
+    reconcileRiskActionPlanLinks() {
+        const risks = Array.isArray(this.risks) ? this.risks : [];
+        const plans = Array.isArray(this.actionPlans) ? this.actionPlans : [];
+
+        risks.forEach(risk => {
+            risk.actionPlans = Array.isArray(risk?.actionPlans) ? risk.actionPlans : [];
+        });
+
+        plans.forEach(plan => {
+            plan.risks = Array.isArray(plan?.risks) ? plan.risks : [];
+            plan.risks.forEach(riskId => {
+                const risk = risks.find(item => idsEqual(item?.id, riskId));
+                if (!risk) return;
+                risk.actionPlans = Array.isArray(risk.actionPlans) ? risk.actionPlans : [];
+                if (!risk.actionPlans.some(planId => idsEqual(planId, plan.id))) {
+                    risk.actionPlans.push(plan.id);
+                }
+            });
+        });
+
+        risks.forEach(risk => {
+            risk.actionPlans.forEach(planId => {
+                const plan = plans.find(item => idsEqual(item?.id, planId));
+                if (!plan) return;
+                plan.risks = Array.isArray(plan.risks) ? plan.risks : [];
+                if (!plan.risks.some(riskId => idsEqual(riskId, risk.id))) {
+                    plan.risks.push(risk.id);
+                }
+            });
+        });
     }
 
     normalizeInterviewDate(value) {
@@ -2850,7 +2913,8 @@ class RiskManagementSystem {
 
         this.risks = cloneArray(snapshot.risks).map(risk => this.normalizeRisk(risk));
         this.controls = cloneArray(snapshot.controls);
-        this.actionPlans = cloneArray(snapshot.actionPlans);
+        this.actionPlans = cloneArray(snapshot.actionPlans).map(plan => this.normalizeActionPlan(plan));
+        this.reconcileRiskActionPlanLinks();
         this.history = cloneArray(snapshot.history);
         this.interviews = cloneArray(snapshot.interviews)
             .map(entry => this.normalizeInterview(entry))
