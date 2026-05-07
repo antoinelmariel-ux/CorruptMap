@@ -717,15 +717,16 @@ body.feedback-mode-paused .feedback-panel * {
 
 .net-slider-track {
     position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
+    display: block;
     padding: 6px 12px 8px;
 }
 
 .net-slider-input {
     --slider-progress: 33%;
+    position: relative;
+    z-index: 2;
     width: 100%;
+    margin: 0;
     -webkit-appearance: none;
     appearance: none;
     height: 10px;
@@ -771,8 +772,8 @@ body.feedback-mode-paused .feedback-panel * {
     display: block;
     width: 100%;
     padding: 0;
-    margin-top: -4px;
-    min-height: 68px;
+    margin-top: -14px;
+    min-height: 76px;
 }
 
 .net-slider-mark {
@@ -1552,7 +1553,8 @@ body.feedback-mode-paused .feedback-panel * {
     white-space: nowrap;
 }
 
-.matrix-container[data-view="net"] .axis-label.y-axis {
+.matrix-container[data-view="net"] .axis-label.y-axis,
+.matrix-container[data-view="post"] .axis-label.y-axis {
     left: -6.75rem;
 }
 
