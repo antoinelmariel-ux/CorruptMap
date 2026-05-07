@@ -430,6 +430,11 @@ var currentEditingActionPlanId = null;
 var actionPlanFilterQueryForRisk = '';
 var controlCreationContext = null;
 var actionPlanCreationContext = null;
+
+function encodeInlineArgument(value) {
+    return encodeURIComponent(String(value ?? '')).replace(/'/g, '%27');
+}
+
 var riskBenefitsState = {
     undue: [],
     expected: []
@@ -1718,12 +1723,14 @@ function renderActionPlanSelectionList() {
         return String(plan.id).includes(query) || title.includes(query);
     }).map(plan => {
         const isSelected = selectedActionPlansForRisk.some(id => idsEqual(id, plan.id));
-        const title = plan.title || 'Untitled';
+        const title = escapeHtml(plan.title || 'Untitled');
+        const planId = encodeInlineArgument(plan.id);
+        const safePlanId = sanitizeId(String(plan.id));
         return `
             <div class="risk-list-item">
-              <input type="checkbox" id="action-plan-${plan.id}" ${isSelected ? 'checked' : ''} onchange='toggleActionPlanSelection(${JSON.stringify(plan.id)})'>
+              <input type="checkbox" id="action-plan-${safePlanId}" ${isSelected ? 'checked' : ''} onchange="toggleActionPlanSelection(decodeURIComponent('${planId}'))">
               <div class="risk-item-info">
-                <div class="risk-item-title">#${plan.id} - ${title}</div>
+                <div class="risk-item-title">#${escapeHtml(plan.id)} - ${title}</div>
               </div>
             </div>`;
     }).join('');
@@ -1992,13 +1999,18 @@ function renderRiskSelectionListForPlan() {
         return String(risk.id).includes(query) || title.includes(query);
     }).map(risk => {
         const isSelected = selectedRisksForPlan.some(id => idsEqual(id, risk.id));
-        const title = risk.titre || risk.description || 'Untitled';
+        const title = escapeHtml(risk.titre || risk.description || 'Untitled');
+        const process = escapeHtml(risk.processus || '');
+        const subProcess = risk.sousProcessus ? ` > ${escapeHtml(risk.sousProcessus)}` : '';
+        const type = escapeHtml(risk.typeCorruption || '');
+        const riskId = encodeInlineArgument(risk.id);
+        const safeRiskId = sanitizeId(String(risk.id));
         return `
             <div class="risk-list-item">
-              <input type="checkbox" id="plan-risk-${risk.id}" ${isSelected ? 'checked' : ''} onchange="toggleRiskSelectionForPlan(${JSON.stringify(risk.id)})">
+              <input type="checkbox" id="plan-risk-${safeRiskId}" ${isSelected ? 'checked' : ''} onchange="toggleRiskSelectionForPlan(decodeURIComponent('${riskId}'))">
               <div class="risk-item-info">
-                <div class="risk-item-title">#${risk.id} - ${title}</div>
-                <div class="risk-item-meta">Process: ${risk.processus}${risk.sousProcessus ? ` > ${risk.sousProcessus}` : ''} | Type: ${risk.typeCorruption}</div>
+                <div class="risk-item-title">#${escapeHtml(risk.id)} - ${title}</div>
+                <div class="risk-item-meta">Process: ${process}${subProcess} | Type: ${type}</div>
               </div>
             </div>`;
     }).join('');
@@ -2045,10 +2057,12 @@ function updateSelectedRisksForPlanDisplay() {
         const risk = rms.risks.find(r => idsEqual(r.id, riskId));
         if (!risk) return '';
         const title = risk.titre || risk.description || 'Untitled';
+        const truncatedTitle = `${title.substring(0, 50)}${title.length > 50 ? '...' : ''}`;
+        const encodedRiskId = encodeInlineArgument(riskId);
         return `
             <div class="selected-risk-item">
-              #${risk.id} - ${title.substring(0, 50)}${title.length > 50 ? '...' : ''}
-              <span class="remove-risk" onclick="removeRiskFromPlanSelection(${JSON.stringify(riskId)})">×</span>
+              #${escapeHtml(risk.id)} - ${escapeHtml(truncatedTitle)}
+              <span class="remove-risk" onclick="removeRiskFromPlanSelection(decodeURIComponent('${encodedRiskId}'))">×</span>
             </div>`;
     }).join('');
 }
