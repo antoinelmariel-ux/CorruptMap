@@ -116,12 +116,7 @@ class RiskManagementSystem {
         const storedHistory = this.loadData('history');
         this.history = Array.isArray(storedHistory) ? storedHistory : this.getDefaultHistory();
 
-        const defaultInterviews = this.getDefaultInterviews();
-        this.interviews = Array.isArray(defaultInterviews)
-            ? defaultInterviews
-                .map(entry => this.normalizeInterview(entry))
-                .filter(Boolean)
-            : [];
+        this.interviews = [];
         this.interviewFolder = 'interviews';
         this.interviewFileCount = 0;
         this.interviewJsonCount = 0;
@@ -231,7 +226,7 @@ class RiskManagementSystem {
         }
         this.saveData();
         this.updateLastSaveTime();
-        this.reloadInterviewFiles();
+        void this.reloadInterviewFiles();
     }
 
     renderAll() {
@@ -274,14 +269,6 @@ class RiskManagementSystem {
 
     getDefaultHistory() {
         const defaults = window.RMS_DEFAULT_DATA?.history;
-        if (!Array.isArray(defaults)) {
-            return [];
-        }
-        return defaults.map(item => cloneDefaultEntry(item));
-    }
-
-    getDefaultInterviews() {
-        const defaults = window.RMS_DEFAULT_DATA?.interviews;
         if (!Array.isArray(defaults)) {
             return [];
         }
