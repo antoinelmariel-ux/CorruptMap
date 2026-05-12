@@ -42,6 +42,9 @@ function switchTab(tabNameOrEvent, maybeTabName) {
     if (window.rms) {
         rms.currentTab = tabName;
         rms.renderAll();
+        if (tabName === 'interviews' && typeof rms.reloadInterviewFiles === 'function') {
+            rms.reloadInterviewFiles();
+        }
     }
 }
 window.switchTab = switchTab;
