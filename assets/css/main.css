@@ -2232,6 +2232,11 @@ tbody tr:hover {
     transform: scale(1.1);
 }
 
+.action-btn-email {
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
 #risksTable .table-actions {
     flex-direction: column;
     gap: 6px;
