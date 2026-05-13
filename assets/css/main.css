@@ -4264,7 +4264,7 @@ tbody tr:hover {
 .controls-table-header,
 .controls-table-row {
     display: grid;
-    grid-template-columns: minmax(220px, 2fr) minmax(120px, 1fr) minmax(180px, 1.2fr) minmax(150px, 1fr) minmax(120px, 0.7fr);
+    grid-template-columns: minmax(220px, 2fr) minmax(120px, 1fr) minmax(180px, 1.2fr) minmax(150px, 1fr) minmax(150px, 0.8fr);
     gap: 16px;
     align-items: center;
     padding: 18px 22px;
@@ -4354,6 +4354,24 @@ tbody tr:hover {
     display: flex;
     justify-content: flex-end;
     gap: 6px;
+    min-width: 0;
+}
+
+.controls-table-actions .action-btn {
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+.controls-table-actions .action-btn-email {
+    font-size: 1.1rem;
+    line-height: 1;
 }
 
 .controls-table-header .controls-table-actions {
