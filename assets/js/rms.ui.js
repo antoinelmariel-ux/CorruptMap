@@ -1855,6 +1855,59 @@ function editActionPlan(planId) {
 }
 window.editActionPlan = editActionPlan;
 
+
+function escapeActionPlanEmailHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/\r?\n/g, '<br>');
+}
+
+function formatActionPlanEmailDueDate(value) {
+    const rawValue = value != null ? String(value).trim() : '';
+    if (!rawValue) {
+        return 'not defined due date';
+    }
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(rawValue)) {
+        const [year, month, day] = rawValue.split('-');
+        return `${day}/${month}/${year}`;
+    }
+
+    return rawValue;
+}
+
+function sendActionPlanReminderEmail(planId) {
+    const app = typeof rms !== 'undefined' ? rms : window.rms;
+    const plan = app && Array.isArray(app.actionPlans)
+        ? app.actionPlans.find(item => item.id == planId)
+        : null;
+
+    if (!plan) {
+        if (typeof showNotification === 'function') {
+            showNotification('error', 'Action plan not found');
+        }
+        return;
+    }
+
+    const planTitle = String(plan.title || 'Untitled plan').trim() || 'Untitled plan';
+    const dueDate = formatActionPlanEmailDueDate(plan.dueDate);
+    const description = String(plan.description || '').trim() || 'No description provided.';
+    const subject = `Reminder - Action Plan “${planTitle}”`;
+    const htmlBody = [
+        '<p>Hello,</p>',
+        `<p>I am reminding you that you are in charge of the following action plan: <strong>${escapeActionPlanEmailHtml(planTitle)}</strong>.</p>`,
+        `<p>This plan should be completed by the ${escapeActionPlanEmailHtml(dueDate)}.</p>`,
+        `<p>Here is the full description of the plan: ${escapeActionPlanEmailHtml(description)}</p>`
+    ].join('');
+
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(htmlBody)}`;
+}
+window.sendActionPlanReminderEmail = sendActionPlanReminderEmail;
+
 function deleteActionPlan(planId) {
     const index = rms.actionPlans.findIndex(p => p.id == planId);
     if (index === -1) return;
