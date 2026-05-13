@@ -1856,14 +1856,32 @@ function editActionPlan(planId) {
 window.editActionPlan = editActionPlan;
 
 
-function escapeActionPlanEmailHtml(value) {
-    return String(value ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;')
-        .replace(/\r?\n/g, '<br>');
+function decodeActionPlanEmailEntities(value) {
+    const text = String(value ?? '');
+    if (typeof document === 'undefined') {
+        return text;
+    }
+
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    return textarea.value;
+}
+
+function formatActionPlanEmailText(value) {
+    const withReadableBreaks = String(value ?? '')
+        .replace(/<\s*br\s*\/?\s*>/gi, '\n')
+        .replace(/<\s*\/\s*p\s*>/gi, '\n\n')
+        .replace(/<\s*p(?:\s[^>]*)?>/gi, '')
+        .replace(/<\s*\/\s*li\s*>/gi, '\n')
+        .replace(/<\s*li(?:\s[^>]*)?>/gi, '• ')
+        .replace(/<\s*\/\s*(?:ul|ol|div|h[1-6])\s*>/gi, '\n')
+        .replace(/<[^>]*>/g, '');
+
+    return decodeActionPlanEmailEntities(withReadableBreaks)
+        .replace(/\r\n/g, '\n')
+        .replace(/[ \t]+\n/g, '\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
 }
 
 function formatActionPlanEmailDueDate(value) {
@@ -1893,18 +1911,24 @@ function sendActionPlanReminderEmail(planId) {
         return;
     }
 
-    const planTitle = String(plan.title || 'Untitled plan').trim() || 'Untitled plan';
-    const dueDate = formatActionPlanEmailDueDate(plan.dueDate);
-    const description = String(plan.description || '').trim() || 'No description provided.';
-    const subject = `Reminder - Action Plan “${planTitle}”`;
-    const htmlBody = [
-        '<p>Hello,</p>',
-        `<p>I am reminding you that you are in charge of the following action plan: <strong>${escapeActionPlanEmailHtml(planTitle)}</strong>.</p>`,
-        `<p>This plan should be completed by the ${escapeActionPlanEmailHtml(dueDate)}.</p>`,
-        `<p>Here is the full description of the plan: ${escapeActionPlanEmailHtml(description)}</p>`
-    ].join('');
+    const planTitle = formatActionPlanEmailText(plan.title || 'Untitled plan') || 'Untitled plan';
+    const dueDate = formatActionPlanEmailText(formatActionPlanEmailDueDate(plan.dueDate));
+    const description = formatActionPlanEmailText(plan.description || '') || 'No description provided.';
+    const subjectTitle = planTitle.replace(/\s+/g, ' ').trim();
+    const subject = `Reminder - Action Plan “${subjectTitle}”`;
+    const emailBody = [
+        'Hello,',
+        '',
+        'I am reminding you that you are in charge of the following action plan:',
+        `• ${planTitle}`,
+        '',
+        `This plan should be completed by the ${dueDate}.`,
+        '',
+        'Here is the full description of the plan:',
+        description
+    ].join('\r\n');
 
-    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(htmlBody)}`;
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
 }
 window.sendActionPlanReminderEmail = sendActionPlanReminderEmail;
 
