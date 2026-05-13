@@ -6476,3 +6476,32 @@ tbody tr:hover {
     border-color: rgba(127, 140, 141, 0.25);
     background: rgba(127, 140, 141, 0.12);
 }
+
+.risk-selector-filters {
+    display: grid;
+    grid-template-columns: minmax(220px, 2fr) repeat(2, minmax(180px, 1fr));
+    gap: 12px;
+    align-items: end;
+}
+
+.risk-selector-filters.compact {
+    margin-bottom: 12px;
+}
+
+.risk-selector-filters .search-box,
+.risk-selector-filters .form-group {
+    min-width: 0;
+}
+
+.risk-selector-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+@media (max-width: 768px) {
+    .risk-selector-filters {
+        grid-template-columns: 1fr;
+    }
+}
