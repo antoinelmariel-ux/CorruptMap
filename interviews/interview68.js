@@ -1,0 +1,2 @@
+window.RMS_INTERVIEW_FILES = window.RMS_INTERVIEW_FILES || {};
+window.RMS_INTERVIEW_FILES['interview68'] = {"id":68,"fileIndex":68,"fileName":"interview68.js","title":"Entretien Sales Reps","referents":["Sales Reps"],"date":"2026-01-09","notes":"","scopes":[],"processes":[],"subProcesses":[],"createdAt":"2026-01-09T16:20:44Z","updatedAt":"2026-01-09T16:20:44Z","mindMap":{"version":1,"data":null}};

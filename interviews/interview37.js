@@ -1,0 +1,2 @@
+window.RMS_INTERVIEW_FILES = window.RMS_INTERVIEW_FILES || {};
+window.RMS_INTERVIEW_FILES['interview37'] = {"id":37,"fileIndex":37,"fileName":"interview37.js","title":"Entretien Kareen HANTZBERG","referents":["Kareen HANTZBERG"],"date":"2026-01-09","notes":"","scopes":[],"processes":[],"subProcesses":[],"createdAt":"2026-01-09T16:20:44Z","updatedAt":"2026-01-09T16:20:44Z","mindMap":{"version":1,"data":null}};
