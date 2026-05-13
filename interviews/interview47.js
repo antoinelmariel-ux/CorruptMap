@@ -1,0 +1,2 @@
+window.RMS_INTERVIEW_FILES = window.RMS_INTERVIEW_FILES || {};
+window.RMS_INTERVIEW_FILES['interview47'] = {"id":47,"fileIndex":47,"fileName":"interview47.js","title":"Entretien Mazen ELZAABI","referents":["Mazen ELZAABI"],"date":"2026-01-09","notes":"","scopes":[],"processes":[],"subProcesses":[],"createdAt":"2026-01-09T16:20:44Z","updatedAt":"2026-01-09T16:20:44Z","mindMap":{"version":1,"data":null}};

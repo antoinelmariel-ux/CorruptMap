@@ -1,0 +1,2 @@
+window.RMS_INTERVIEW_FILES = window.RMS_INTERVIEW_FILES || {};
+window.RMS_INTERVIEW_FILES['interview67'] = {"id":67,"fileIndex":67,"fileName":"interview67.js","title":"Entretien Roxane LEUNG-TACK","referents":["Roxane LEUNG-TACK"],"date":"2026-01-09","notes":"","scopes":[],"processes":[],"subProcesses":[],"createdAt":"2026-01-09T16:20:44Z","updatedAt":"2026-01-09T16:20:44Z","mindMap":{"version":1,"data":null}};

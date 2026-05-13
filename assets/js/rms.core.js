@@ -119,11 +119,13 @@ class RiskManagementSystem {
         this.interviews = [];
         this.interviewFolder = 'interviews';
         this.interviewManifestFileName = 'interviews.json';
+        this.interviewIndexFileName = 'interviews.index.js';
         this.interviewFileCount = 0;
         this.interviewJsonCount = 0;
         this.interviewLoadFailed = false;
         this.interviewFolderPicker = null;
         this.interviewAutoLoadAttempted = false;
+        this.interviewScriptLoadPromises = new Map();
         const defaultConfig = this.getDefaultConfig();
         this.config = this.loadConfig() || defaultConfig;
         this.readOnlyConfigKeys = new Set(['riskStatuses']);
@@ -6950,7 +6952,7 @@ class RiskManagementSystem {
     }
 
     async loadInterviewFiles() {
-        if (typeof fetch === 'undefined' || typeof document === 'undefined') {
+        if (typeof document === 'undefined') {
             return false;
         }
 
@@ -6962,11 +6964,13 @@ class RiskManagementSystem {
         let maxJsonIndexFound = 0;
 
         try {
-            const manifestFileNames = await this.loadInterviewManifestFileNames();
-            const loadedFromManifest = Array.isArray(manifestFileNames) && manifestFileNames.length > 0;
+            const indexFileNames = await this.loadInterviewIndexFileNames();
+            const manifestFileNames = indexFileNames.length ? [] : await this.loadInterviewManifestFileNames();
+            const registeredFileNames = indexFileNames.length ? indexFileNames : manifestFileNames;
+            const loadedFromRegistry = Array.isArray(registeredFileNames) && registeredFileNames.length > 0;
 
-            if (loadedFromManifest) {
-                for (const fileName of manifestFileNames) {
+            if (loadedFromRegistry) {
+                for (const fileName of registeredFileNames) {
                     const result = await this.fetchInterviewFileByName(fileName);
                     if (!result || !result.interview) {
                         continue;
@@ -7088,7 +7092,7 @@ class RiskManagementSystem {
         if (!this.interviewFolderPicker) {
             const input = document.createElement('input');
             input.type = 'file';
-            input.accept = '.json,application/json';
+            input.accept = '.js,.json,application/javascript,application/json';
             input.multiple = true;
             input.setAttribute('webkitdirectory', '');
             input.setAttribute('directory', '');
@@ -7163,12 +7167,41 @@ class RiskManagementSystem {
         return null;
     }
 
+    executeInterviewDataScript(content) {
+        if (typeof content !== 'string' || !content.trim()) {
+            return null;
+        }
+        const localWindow = {};
+        const evaluator = new Function('window', `${content}
+return window;`);
+        return evaluator(localWindow);
+    }
+
+    extractInterviewIndexFileNamesFromScript(content) {
+        try {
+            const localWindow = this.executeInterviewDataScript(content);
+            return this.extractInterviewManifestFileNames(localWindow?.RMS_INTERVIEW_INDEX, 'js');
+        } catch (error) {
+            return [];
+        }
+    }
+
+    parseInterviewFileContent(content, fileName) {
+        if (this.getInterviewFileExtension(fileName) === 'js') {
+            const localWindow = this.executeInterviewDataScript(content);
+            const registry = localWindow?.RMS_INTERVIEW_FILES || {};
+            const key = this.getInterviewScriptKey(fileName);
+            return registry[key] || null;
+        }
+        return JSON.parse(content);
+    }
+
     async getInterviewFilesFromLocalSelection(fileList) {
-        const jsonFiles = Array.from(fileList)
-            .filter(file => file && typeof file.name === 'string' && /\.json$/i.test(file.name));
+        const interviewFiles = Array.from(fileList)
+            .filter(file => file && typeof file.name === 'string' && /\.(js|json)$/i.test(file.name));
         const fileMap = new Map();
 
-        jsonFiles.forEach(file => {
+        interviewFiles.forEach(file => {
             const relativeKey = this.getInterviewLocalFileKey(file);
             const baseName = this.getInterviewFileBaseName(file.name);
             if (relativeKey) {
@@ -7178,6 +7211,20 @@ class RiskManagementSystem {
                 fileMap.set(baseName, file);
             }
         });
+
+        const indexFile = this.findInterviewFileByManifestName(fileMap, this.interviewIndexFileName);
+        let indexHasEntries = false;
+        if (indexFile) {
+            const indexContent = await this.readInterviewFile(indexFile);
+            const indexFileNames = this.extractInterviewIndexFileNamesFromScript(indexContent);
+            indexHasEntries = indexFileNames.length > 0;
+            const filesFromIndex = indexFileNames
+                .map(fileName => this.findInterviewFileByManifestName(fileMap, fileName))
+                .filter((file, index, files) => file && files.indexOf(file) === index);
+            if (filesFromIndex.length) {
+                return { files: filesFromIndex, usedManifest: true };
+            }
+        }
 
         const manifestFile = this.findInterviewFileByManifestName(fileMap, this.interviewManifestFileName);
         let manifestHasEntries = false;
@@ -7199,8 +7246,8 @@ class RiskManagementSystem {
         }
 
         return {
-            files: jsonFiles.filter(file => /interview\d+\.json$/i.test(file.name)),
-            usedManifest: Boolean(manifestFile && manifestHasEntries)
+            files: interviewFiles.filter(file => /interview\d+\.(js|json)$/i.test(file.name)),
+            usedManifest: Boolean(indexFile && indexHasEntries) || Boolean(manifestFile && manifestHasEntries)
         };
     }
 
@@ -7213,8 +7260,8 @@ class RiskManagementSystem {
 
         if (!files.length) {
             alert(usedManifest
-                ? 'The selected interviews.json file does not reference any interviewX.json file present in the selected folder.'
-                : 'No interviewX.json file found in the selected folder.');
+                ? 'The selected interview index does not reference any interviewX.js or interviewX.json file present in the selected folder.'
+                : 'No interviewX.js or interviewX.json file found in the selected folder.');
             return;
         }
 
@@ -7228,7 +7275,7 @@ class RiskManagementSystem {
                 continue;
             }
             try {
-                const data = JSON.parse(content);
+                const data = this.parseInterviewFileContent(content, file.name);
                 const interview = this.extractInterviewPayload(data);
                 if (!interview) {
                     continue;
@@ -7266,14 +7313,14 @@ class RiskManagementSystem {
 
         if (typeof showNotification === 'function') {
             const message = usedManifest
-                ? 'Interviews loaded from the selected folder using interviews.json.'
+                ? 'Interviews loaded from the selected folder using the interview index.'
                 : 'Interviews loaded from the selected folder.';
             showNotification('success', message);
         }
     }
 
     async fetchInterviewFile(index) {
-        return this.fetchInterviewFileByName(`interview${index}.json`);
+        return this.fetchInterviewFileByName(`interview${index}.js`);
     }
 
     async fetchInterviewFileByName(fileName) {
@@ -7281,11 +7328,37 @@ class RiskManagementSystem {
             return null;
         }
         const normalizedFileName = fileName.trim().replace(/^\/+/, '');
-        const jsonInterview = await this.fetchInterviewJson(normalizedFileName);
-        if (jsonInterview) {
-            return { interview: jsonInterview, fileName: normalizedFileName, isJson: true };
+        const extension = this.getInterviewFileExtension(normalizedFileName);
+
+        if (extension === 'json') {
+            const jsonInterview = await this.fetchInterviewJson(normalizedFileName);
+            if (jsonInterview) {
+                return { interview: jsonInterview, fileName: normalizedFileName, isJson: true };
+            }
+            return null;
+        }
+
+        const scriptFileName = extension === 'js' ? normalizedFileName : `${normalizedFileName}.js`;
+        const scriptInterview = await this.fetchInterviewScript(scriptFileName);
+        if (scriptInterview) {
+            return { interview: scriptInterview, fileName: scriptFileName, isJson: false };
         }
         return null;
+    }
+
+    async loadInterviewIndexFileNames() {
+        const indexName = typeof this.interviewIndexFileName === 'string'
+            ? this.interviewIndexFileName.trim()
+            : '';
+        if (!indexName) {
+            return [];
+        }
+
+        const loaded = await this.loadInterviewScriptFile(indexName);
+        if (!loaded || typeof window === 'undefined') {
+            return [];
+        }
+        return this.extractInterviewManifestFileNames(window.RMS_INTERVIEW_INDEX, 'js');
     }
 
     async loadInterviewManifestFileNames() {
@@ -7297,10 +7370,10 @@ class RiskManagementSystem {
         }
 
         const manifest = await this.fetchInterviewJsonData(manifestName);
-        return this.extractInterviewManifestFileNames(manifest);
+        return this.extractInterviewManifestFileNames(manifest, 'json');
     }
 
-    extractInterviewManifestFileNames(manifest) {
+    extractInterviewManifestFileNames(manifest, expectedExtension = 'json') {
         const manifestName = typeof this.interviewManifestFileName === 'string'
             ? this.interviewManifestFileName.trim()
             : '';
@@ -7330,7 +7403,11 @@ class RiskManagementSystem {
             }
             const fileBaseName = fileName.split('/').filter(Boolean).pop() || fileName;
             const manifestBaseName = manifestName.split('/').filter(Boolean).pop() || manifestName;
-            if (!fileName || fileBaseName === manifestBaseName || !/\.json$/i.test(fileName)) {
+            const indexBaseName = typeof this.interviewIndexFileName === 'string'
+                ? this.interviewIndexFileName.split('/').filter(Boolean).pop() || this.interviewIndexFileName
+                : '';
+            const extensionPattern = expectedExtension === 'js' ? /\.js$/i : /\.json$/i;
+            if (!fileName || fileBaseName === manifestBaseName || fileBaseName === indexBaseName || !extensionPattern.test(fileName)) {
                 return;
             }
             uniqueNames.add(fileName);
@@ -7342,6 +7419,67 @@ class RiskManagementSystem {
     async fetchInterviewJson(path) {
         const data = await this.fetchInterviewJsonData(path);
         return this.extractInterviewPayload(data);
+    }
+
+    getInterviewFileExtension(fileName) {
+        const baseName = this.getInterviewFileBaseName(fileName).toLowerCase();
+        const match = baseName.match(/\.([a-z0-9]+)$/i);
+        return match ? match[1] : '';
+    }
+
+    getInterviewScriptKey(fileName) {
+        const baseName = this.getInterviewFileBaseName(fileName);
+        return baseName.replace(/\.js$/i, '');
+    }
+
+    getInterviewScriptRegistry() {
+        if (typeof window === 'undefined') {
+            return null;
+        }
+        window.RMS_INTERVIEW_FILES = window.RMS_INTERVIEW_FILES || {};
+        return window.RMS_INTERVIEW_FILES;
+    }
+
+    fetchInterviewScript(fileName) {
+        const registry = this.getInterviewScriptRegistry();
+        const key = this.getInterviewScriptKey(fileName);
+        if (!registry || !key) {
+            return Promise.resolve(null);
+        }
+        if (registry[key]) {
+            return Promise.resolve(this.extractInterviewPayload(registry[key]));
+        }
+        return this.loadInterviewScriptFile(fileName).then((loaded) => {
+            if (!loaded || !registry[key]) {
+                return null;
+            }
+            return this.extractInterviewPayload(registry[key]);
+        });
+    }
+
+    loadInterviewScriptFile(fileName) {
+        if (typeof document === 'undefined') {
+            return Promise.resolve(false);
+        }
+        const normalizedFileName = typeof fileName === 'string' ? fileName.trim().replace(/^\/+/, '') : '';
+        if (!normalizedFileName) {
+            return Promise.resolve(false);
+        }
+        const targetPath = this.getInterviewFilePath(normalizedFileName);
+        if (this.interviewScriptLoadPromises.has(targetPath)) {
+            return this.interviewScriptLoadPromises.get(targetPath);
+        }
+
+        const promise = new Promise(resolve => {
+            const script = document.createElement('script');
+            script.src = targetPath;
+            script.async = false;
+            script.onload = () => resolve(true);
+            script.onerror = () => resolve(false);
+            document.head.appendChild(script);
+        });
+        this.interviewScriptLoadPromises.set(targetPath, promise);
+        return promise;
     }
 
     async fetchInterviewJsonData(path) {
@@ -7456,7 +7594,7 @@ class RiskManagementSystem {
         return fallback;
     }
 
-    saveInterviewFile(interview, format = 'json') {
+    saveInterviewFile(interview, format = 'js') {
         if (!interview) {
             return;
         }
@@ -7512,7 +7650,7 @@ class RiskManagementSystem {
         }
     }
 
-    downloadInterviewFile(interviewId, format = 'json') {
+    downloadInterviewFile(interviewId, format = 'js') {
         if (!Array.isArray(this.interviews)) {
             return;
         }
@@ -12012,9 +12150,9 @@ class RiskManagementSystem {
                 ? '<button class="btn btn-outline" type="button" onclick="rms.openInterviewFolderPicker()">📂 Load an interviews folder</button>'
                 : '';
             const message = this.interviewAutoLoadAttempted && this.interviewLoadFailed
-                ? 'Automatic loading from the interviews folder did not find any readable file listed in interviews.json or matching interviewX.json. You can retry by selecting the folder manually.'
+                ? 'Automatic loading from the interviews folder did not find any readable file listed in interviews.index.js or matching interviewX.js. You can retry by selecting the folder manually.'
                 : this.supportsInterviewFolderPicker()
-                    ? 'No interview report loaded. Select the folder containing your interviewX.json files.'
+                    ? 'No interview report loaded. Select the folder containing your interviewX.js files.'
                     : 'No interview report loaded.';
             container.innerHTML = `<div class="interview-empty">${message}${button}</div>`;
             return;

@@ -1,0 +1,2 @@
+window.RMS_INTERVIEW_FILES = window.RMS_INTERVIEW_FILES || {};
+window.RMS_INTERVIEW_FILES['interview20'] = {"id":20,"fileIndex":20,"fileName":"interview20.js","title":"Entretien Eric PIMPURNIAUX","referents":["Eric PIMPURNIAUX"],"date":"2026-01-09","notes":"","scopes":[],"processes":[],"subProcesses":[],"createdAt":"2026-01-09T16:20:44Z","updatedAt":"2026-01-09T16:20:44Z","mindMap":{"version":1,"data":null}};
