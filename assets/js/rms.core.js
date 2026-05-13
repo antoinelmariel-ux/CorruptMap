@@ -7123,16 +7123,98 @@ class RiskManagementSystem {
         });
     }
 
+    normalizeInterviewLocalPath(path) {
+        return typeof path === 'string'
+            ? path.trim().replace(/\\/g, '/').replace(/^\/+/, '')
+            : '';
+    }
+
+    getInterviewLocalFileKey(file) {
+        const relativePath = this.normalizeInterviewLocalPath(file?.webkitRelativePath || file?.relativePath || '');
+        const name = this.normalizeInterviewLocalPath(file?.name || '');
+        return relativePath || name;
+    }
+
+    getInterviewFileBaseName(path) {
+        const normalizedPath = this.normalizeInterviewLocalPath(path);
+        return normalizedPath.split('/').filter(Boolean).pop() || normalizedPath;
+    }
+
+    findInterviewFileByManifestName(fileMap, manifestFileName) {
+        const requestedPath = this.normalizeInterviewLocalPath(manifestFileName);
+        const requestedBaseName = this.getInterviewFileBaseName(requestedPath);
+        if (!requestedPath) {
+            return null;
+        }
+        if (fileMap.has(requestedPath)) {
+            return fileMap.get(requestedPath);
+        }
+        if (fileMap.has(requestedBaseName)) {
+            return fileMap.get(requestedBaseName);
+        }
+
+        const requestedSuffix = `/${requestedPath}`;
+        for (const [filePath, file] of fileMap.entries()) {
+            const fileBaseName = this.getInterviewFileBaseName(filePath);
+            if (filePath.endsWith(requestedSuffix) || fileBaseName === requestedBaseName) {
+                return file;
+            }
+        }
+        return null;
+    }
+
+    async getInterviewFilesFromLocalSelection(fileList) {
+        const jsonFiles = Array.from(fileList)
+            .filter(file => file && typeof file.name === 'string' && /\.json$/i.test(file.name));
+        const fileMap = new Map();
+
+        jsonFiles.forEach(file => {
+            const relativeKey = this.getInterviewLocalFileKey(file);
+            const baseName = this.getInterviewFileBaseName(file.name);
+            if (relativeKey) {
+                fileMap.set(relativeKey, file);
+            }
+            if (baseName && !fileMap.has(baseName)) {
+                fileMap.set(baseName, file);
+            }
+        });
+
+        const manifestFile = this.findInterviewFileByManifestName(fileMap, this.interviewManifestFileName);
+        let manifestHasEntries = false;
+        if (manifestFile) {
+            const manifestContent = await this.readInterviewFile(manifestFile);
+            try {
+                const manifest = JSON.parse(manifestContent || 'null');
+                const manifestFileNames = this.extractInterviewManifestFileNames(manifest);
+                manifestHasEntries = manifestFileNames.length > 0;
+                const filesFromManifest = manifestFileNames
+                    .map(fileName => this.findInterviewFileByManifestName(fileMap, fileName))
+                    .filter((file, index, files) => file && files.indexOf(file) === index);
+                if (filesFromManifest.length) {
+                    return { files: filesFromManifest, usedManifest: true };
+                }
+            } catch (error) {
+                // Ignore malformed manifests and fall back to direct interview files.
+            }
+        }
+
+        return {
+            files: jsonFiles.filter(file => /interview\d+\.json$/i.test(file.name)),
+            usedManifest: Boolean(manifestFile && manifestHasEntries)
+        };
+    }
+
     async handleInterviewFolderSelection(fileList) {
         if (!fileList || !fileList.length) {
             return;
         }
 
-        const files = Array.from(fileList)
-            .filter(file => file && typeof file.name === 'string' && /interview\d+\.json$/i.test(file.name));
+        const { files, usedManifest } = await this.getInterviewFilesFromLocalSelection(fileList);
 
         if (!files.length) {
-            alert('No interviewX.json file found in the selected folder.');
+            alert(usedManifest
+                ? 'The selected interviews.json file does not reference any interviewX.json file present in the selected folder.'
+                : 'No interviewX.json file found in the selected folder.');
             return;
         }
 
@@ -7151,11 +7233,12 @@ class RiskManagementSystem {
                 if (!interview) {
                     continue;
                 }
-                const fileIndex = this.getInterviewFileIndex({ fileName: file.name });
+                const filePath = this.getInterviewLocalFileKey(file);
+                const fileIndex = this.getInterviewFileIndex({ fileName: filePath || file.name });
                 const withIndex = {
                     ...interview,
                     fileIndex: this.getInterviewFileIndex(interview) || fileIndex,
-                    fileName: interview.fileName || file.name
+                    fileName: interview.fileName || this.getInterviewFileBaseName(file.name)
                 };
                 const normalized = this.normalizeInterview(withIndex);
                 if (normalized) {
@@ -7182,7 +7265,10 @@ class RiskManagementSystem {
         this.updateInterviewsList();
 
         if (typeof showNotification === 'function') {
-            showNotification('success', 'Interviews loaded from the selected folder.');
+            const message = usedManifest
+                ? 'Interviews loaded from the selected folder using interviews.json.'
+                : 'Interviews loaded from the selected folder.';
+            showNotification('success', message);
         }
     }
 
@@ -7211,6 +7297,13 @@ class RiskManagementSystem {
         }
 
         const manifest = await this.fetchInterviewJsonData(manifestName);
+        return this.extractInterviewManifestFileNames(manifest);
+    }
+
+    extractInterviewManifestFileNames(manifest) {
+        const manifestName = typeof this.interviewManifestFileName === 'string'
+            ? this.interviewManifestFileName.trim()
+            : '';
         const rawEntries = Array.isArray(manifest)
             ? manifest
             : Array.isArray(manifest?.files)
@@ -7228,8 +7321,16 @@ class RiskManagementSystem {
                     : typeof entry?.path === 'string'
                         ? entry.path
                         : '';
-            const fileName = rawName.trim().replace(/^\/+/, '');
-            if (!fileName || fileName === manifestName || !/\.json$/i.test(fileName)) {
+            let fileName = rawName.trim().replace(/\\/g, '/').replace(/^\/+/, '');
+            const folderPrefix = typeof this.interviewFolder === 'string' && this.interviewFolder.trim()
+                ? `${this.interviewFolder.trim().replace(/^\/+|\/+$/g, '')}/`
+                : '';
+            if (folderPrefix && fileName.toLowerCase().startsWith(folderPrefix.toLowerCase())) {
+                fileName = fileName.slice(folderPrefix.length);
+            }
+            const fileBaseName = fileName.split('/').filter(Boolean).pop() || fileName;
+            const manifestBaseName = manifestName.split('/').filter(Boolean).pop() || manifestName;
+            if (!fileName || fileBaseName === manifestBaseName || !/\.json$/i.test(fileName)) {
                 return;
             }
             uniqueNames.add(fileName);
