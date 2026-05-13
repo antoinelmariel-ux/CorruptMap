@@ -122,6 +122,7 @@ class RiskManagementSystem {
         this.interviewJsonCount = 0;
         this.interviewLoadFailed = false;
         this.interviewFolderPicker = null;
+        this.interviewAutoLoadAttempted = false;
         const defaultConfig = this.getDefaultConfig();
         this.config = this.loadConfig() || defaultConfig;
         this.readOnlyConfigKeys = new Set(['riskStatuses']);
@@ -226,7 +227,7 @@ class RiskManagementSystem {
         }
         this.saveData();
         this.updateLastSaveTime();
-        void this.reloadInterviewFiles();
+        void this.ensureInterviewFilesLoaded();
     }
 
     renderAll() {
@@ -7001,21 +7002,37 @@ class RiskManagementSystem {
         }
     }
 
-    reloadInterviewFiles() {
-        if (this.interviewReloadPromise) {
-            return this.interviewReloadPromise;
+    ensureInterviewFilesLoaded() {
+        const hasLoadedInterviews = Array.isArray(this.interviews) && this.interviews.length > 0;
+        if (hasLoadedInterviews && !this.interviewLoadFailed) {
+            this.updateInterviewsList();
+            return Promise.resolve(true);
         }
 
+        this.interviewAutoLoadAttempted = true;
+        return this.reloadInterviewFiles();
+    }
+
+    reloadInterviewFiles() {
+        if (this.interviewReloadPromise) {
+            return this.interviewReloadPromise.then((hasUpdates) => {
+                this.updateInterviewsList();
+                return hasUpdates;
+            });
+        }
+
+        this.interviewAutoLoadAttempted = true;
         this.interviewReloadPromise = this.loadInterviewFiles()
             .then((hasUpdates) => {
                 if (hasUpdates) {
                     this.populateSelects();
-                    this.updateInterviewsList();
                 }
+                this.updateInterviewsList();
                 return hasUpdates;
             })
             .finally(() => {
                 this.interviewReloadPromise = null;
+                this.updateInterviewsList();
             });
 
         return this.interviewReloadPromise;
@@ -11811,12 +11828,18 @@ class RiskManagementSystem {
             if (countElement) {
                 countElement.textContent = '0 interview report';
             }
+            if (this.interviewReloadPromise) {
+                container.innerHTML = '<div class="interview-empty">Automatic loading of interview reports from the interviews folder is in progress...</div>';
+                return;
+            }
             const button = this.supportsInterviewFolderPicker()
                 ? '<button class="btn btn-outline" type="button" onclick="rms.openInterviewFolderPicker()">📂 Load an interviews folder</button>'
                 : '';
-            const message = this.supportsInterviewFolderPicker()
-                ? 'No interview report loaded. Select the folder containing your interviewX.json files.'
-                : 'No interview report loaded.';
+            const message = this.interviewAutoLoadAttempted && this.interviewLoadFailed
+                ? 'Automatic loading from the interviews folder did not find any readable interviewX.json file. You can retry by selecting the folder manually.'
+                : this.supportsInterviewFolderPicker()
+                    ? 'No interview report loaded. Select the folder containing your interviewX.json files.'
+                    : 'No interview report loaded.';
             container.innerHTML = `<div class="interview-empty">${message}${button}</div>`;
             return;
         }
