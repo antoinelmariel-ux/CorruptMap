@@ -9564,6 +9564,7 @@ return window;`);
             })
             .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime())
             .map(({ plan, dueDate, statusLabel }) => ({
+                id: plan?.id,
                 title: plan?.title || 'Untitled plan',
                 owner: plan?.owner || '-',
                 statusLabel,
@@ -9624,7 +9625,7 @@ return window;`);
             if (overdueActionPlans.length === 0) {
                 plansBody.innerHTML = `
                     <tr>
-                        <td colspan="4" class="table-empty">No overdue action plan</td>
+                        <td colspan="5" class="table-empty">No overdue action plan</td>
                     </tr>
                 `;
             } else {
@@ -9634,6 +9635,11 @@ return window;`);
                             <td>${plan.owner || '-'}</td>
                             <td>${plan.formattedDueDate}</td>
                             <td>${plan.statusLabel}</td>
+                            <td class="table-actions-cell">
+                                <div class="table-actions">
+                                    <button class="action-btn action-btn-email" onclick='sendActionPlanReminderEmail(${JSON.stringify(plan.id)})' title="Send reminder email" aria-label="Send reminder email">✉</button>
+                                </div>
+                            </td>
                         </tr>
                     `).join('');
             }
