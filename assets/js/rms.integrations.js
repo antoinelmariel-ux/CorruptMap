@@ -3274,6 +3274,8 @@ function applyPatch() {
       let currentEditingControlId = null;
       let selectedRisksForControl = [];
       let riskFilterQueryForControl = '';
+      let riskEntityFilterForControl = '';
+      let riskTierFilterForControl = '';
       let lastControlData = null;
       function formatGenericControlReference(index) {
         const safeIndex = Number.isFinite(Number(index)) ? Math.max(1, Number(index)) : 1;
@@ -3452,8 +3454,11 @@ function applyPatch() {
 
       window.openRiskSelector = function() {
         riskFilterQueryForControl = '';
+        riskEntityFilterForControl = '';
+        riskTierFilterForControl = '';
         const searchInput = document.getElementById('riskSearchInput');
         if (searchInput) searchInput.value = '';
+        populateRiskSelectorFiltersForControl();
         renderRiskSelectionList();
         const modal = document.getElementById('riskSelectorModal');
         if (modal) {
@@ -3465,25 +3470,93 @@ function applyPatch() {
         }
       };
 
+      function getRiskSelectorOptionLabelForControl(value, options) {
+        const raw = value == null ? '' : String(value);
+        const match = Array.isArray(options)
+          ? options.find(option => String(option?.value ?? option?.label ?? '') === raw)
+          : null;
+        return match?.label || raw;
+      }
+
+      function riskSelectorValueMatchesForControl(value, selectedValue, options) {
+        if (!selectedValue) return true;
+        const raw = value == null ? '' : String(value).trim();
+        const selected = String(selectedValue).trim();
+        const selectedOption = Array.isArray(options)
+          ? options.find(option => String(option?.value ?? option?.label ?? '') === selected)
+          : null;
+        const selectedLabel = selectedOption ? String(selectedOption?.label ?? selectedOption?.value ?? '').trim() : '';
+        return raw === selected || (!!selectedLabel && raw === selectedLabel);
+      }
+
+      function renderRiskSelectorSelectOptionsForControl(selectId, options, emptyLabel, selectedValue) {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+        const selected = selectedValue == null ? '' : String(selectedValue);
+        const optionMarkup = Array.isArray(options)
+          ? options.map(option => {
+              const value = String(option?.value ?? option?.label ?? '');
+              const label = String(option?.label ?? option?.value ?? '');
+              if (!value) return '';
+              return `<option value="${escapeHtml(value)}" ${value === selected ? 'selected' : ''}>${escapeHtml(label)}</option>`;
+            }).join('')
+          : '';
+        select.innerHTML = `<option value="">${escapeHtml(emptyLabel)}</option>${optionMarkup}`;
+        select.value = selected;
+      }
+
+      function populateRiskSelectorFiltersForControl() {
+        renderRiskSelectorSelectOptionsForControl('riskEntityFilterControl', RMS?.config?.countries, 'All entities', riskEntityFilterForControl);
+        renderRiskSelectorSelectOptionsForControl('riskTierFilterControl', RMS?.config?.tiers, 'All third parties', riskTierFilterForControl);
+      }
+
+      function riskMatchesSelectorFiltersForControl(risk) {
+        const query = riskFilterQueryForControl.toLowerCase();
+        const title = (risk.titre || '').toLowerCase();
+        const description = (risk.description || '').toLowerCase();
+        const matchesQuery = !query || String(risk.id).toLowerCase().includes(query) || title.includes(query) || description.includes(query);
+        const countries = Array.isArray(risk?.paysExposes) ? risk.paysExposes : [];
+        const tiers = Array.isArray(risk?.tiers) ? risk.tiers : [];
+        const matchesEntity = !riskEntityFilterForControl || countries.some(value => riskSelectorValueMatchesForControl(value, riskEntityFilterForControl, RMS?.config?.countries));
+        const matchesTier = !riskTierFilterForControl || tiers.some(value => riskSelectorValueMatchesForControl(value, riskTierFilterForControl, RMS?.config?.tiers));
+        return matchesQuery && matchesEntity && matchesTier;
+      }
+
+      function getFilteredRisksForControl() {
+        return Array.isArray(state?.risks) ? state.risks.filter(riskMatchesSelectorFiltersForControl) : [];
+      }
+
       function renderRiskSelectionList() {
         const riskList = document.getElementById('riskList');
         if (!riskList) return;
-        const query = riskFilterQueryForControl.toLowerCase();
+        const filteredRisks = getFilteredRisksForControl();
+        if (!filteredRisks.length) {
+          riskList.innerHTML = '<div class="risk-list-empty">No risk matches the current filters.</div>';
+          return;
+        }
 
-        riskList.innerHTML = state.risks.filter(risk => {
-          const title = (risk.titre || risk.description || '').toLowerCase();
-          return String(risk.id).includes(query) || title.includes(query);
-        }).map(risk => {
+        riskList.innerHTML = filteredRisks.map(risk => {
           const isSelected = selectedRisksForControl.some(id => idsEqual(id, risk.id));
           const title = risk.titre || risk.description || 'Sans titre';
+          const entityLabel = (Array.isArray(risk.paysExposes) ? risk.paysExposes : [])
+            .map(value => getRiskSelectorOptionLabelForControl(value, RMS?.config?.countries))
+            .filter(Boolean)
+            .join(', ');
+          const tierLabel = (Array.isArray(risk.tiers) ? risk.tiers : [])
+            .map(value => getRiskSelectorOptionLabelForControl(value, RMS?.config?.tiers))
+            .filter(Boolean)
+            .join(', ');
           return `
             <div class="risk-list-item">
               <input type="checkbox" id="risk-${risk.id}" ${isSelected ? 'checked' : ''}
                      onchange='toggleRiskSelection(${JSON.stringify(risk.id)})'>
               <div class="risk-item-info">
-                <div class="risk-item-title">#${risk.id} - ${title}</div>
+                <div class="risk-item-title">#${escapeHtml(risk.id)} - ${escapeHtml(title)}</div>
                 <div class="risk-item-meta">
-                  Processus: ${risk.processus}${risk.sousProcessus ? ` > ${risk.sousProcessus}` : ''} | Type: ${risk.typeCorruption}
+                  Processus: ${escapeHtml(risk.processus || '')}${risk.sousProcessus ? ` > ${escapeHtml(risk.sousProcessus)}` : ''} | Type: ${escapeHtml(risk.typeCorruption || '')}
+                </div>
+                <div class="risk-item-meta">
+                  Entities: ${escapeHtml(entityLabel || 'Not defined')} | Third parties: ${escapeHtml(tierLabel || 'Not defined')}
                 </div>
               </div>
             </div>
@@ -3494,6 +3567,37 @@ function applyPatch() {
       window.filterRisksForControl = function(query) {
         riskFilterQueryForControl = query;
         renderRiskSelectionList();
+      };
+
+      window.filterRisksForControlByEntity = function(value) {
+        riskEntityFilterForControl = value;
+        renderRiskSelectionList();
+      };
+
+      window.filterRisksForControlByTier = function(value) {
+        riskTierFilterForControl = value;
+        renderRiskSelectionList();
+      };
+
+      window.selectAllFilteredRisksForControl = function() {
+        getFilteredRisksForControl().forEach(risk => {
+          if (!selectedRisksForControl.some(id => idsEqual(id, risk.id))) {
+            selectedRisksForControl.push(risk.id);
+          }
+        });
+        renderRiskSelectionList();
+        if (RMS && typeof RMS.markUnsavedChange === 'function') {
+          RMS.markUnsavedChange('controlForm');
+        }
+      };
+
+      window.deselectAllFilteredRisksForControl = function() {
+        const filteredRisks = getFilteredRisksForControl();
+        selectedRisksForControl = selectedRisksForControl.filter(id => !filteredRisks.some(risk => idsEqual(risk.id, id)));
+        renderRiskSelectionList();
+        if (RMS && typeof RMS.markUnsavedChange === 'function') {
+          RMS.markUnsavedChange('controlForm');
+        }
       };
 
       window.closeRiskSelector = function() {

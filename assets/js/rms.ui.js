@@ -433,6 +433,8 @@ var selectedActionPlansForRisk = [];
 var lastActionPlanData = null;
 var selectedRisksForPlan = [];
 var riskFilterQueryForPlan = '';
+var riskEntityFilterForPlan = '';
+var riskTierFilterForPlan = '';
 var currentEditingActionPlanId = null;
 var actionPlanFilterQueryForRisk = '';
 var controlCreationContext = null;
@@ -1987,8 +1989,11 @@ window.saveActionPlan = saveActionPlan;
 
 function openRiskSelectorForPlan() {
     riskFilterQueryForPlan = '';
+    riskEntityFilterForPlan = '';
+    riskTierFilterForPlan = '';
     const searchInput = document.getElementById('riskSearchInputPlan');
     if (searchInput) searchInput.value = '';
+    populateRiskSelectorFiltersForPlan();
     renderRiskSelectionListForPlan();
     const modal = document.getElementById('riskSelectorPlanModal');
     if (modal) {
@@ -1997,19 +2002,84 @@ function openRiskSelectorForPlan() {
 }
 window.openRiskSelectorForPlan = openRiskSelectorForPlan;
 
+function getRiskSelectorOptionLabelForPlan(value, options) {
+    const raw = value == null ? '' : String(value);
+    const match = Array.isArray(options)
+        ? options.find(option => String(option?.value ?? option?.label ?? '') === raw)
+        : null;
+    return match?.label || raw;
+}
+
+function riskSelectorValueMatchesForPlan(value, selectedValue, options) {
+    if (!selectedValue) return true;
+    const raw = value == null ? '' : String(value).trim();
+    const selected = String(selectedValue).trim();
+    const selectedOption = Array.isArray(options)
+        ? options.find(option => String(option?.value ?? option?.label ?? '') === selected)
+        : null;
+    const selectedLabel = selectedOption ? String(selectedOption?.label ?? selectedOption?.value ?? '').trim() : '';
+    return raw === selected || (!!selectedLabel && raw === selectedLabel);
+}
+
+function renderRiskSelectorSelectOptionsForPlan(selectId, options, emptyLabel, selectedValue) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    const selected = selectedValue == null ? '' : String(selectedValue);
+    const optionMarkup = Array.isArray(options)
+        ? options.map(option => {
+            const value = String(option?.value ?? option?.label ?? '');
+            const label = String(option?.label ?? option?.value ?? '');
+            if (!value) return '';
+            return `<option value="${escapeHtml(value)}" ${value === selected ? 'selected' : ''}>${escapeHtml(label)}</option>`;
+        }).join('')
+        : '';
+    select.innerHTML = `<option value="">${escapeHtml(emptyLabel)}</option>${optionMarkup}`;
+    select.value = selected;
+}
+
+function populateRiskSelectorFiltersForPlan() {
+    renderRiskSelectorSelectOptionsForPlan('riskEntityFilterPlan', rms?.config?.countries, 'All entities', riskEntityFilterForPlan);
+    renderRiskSelectorSelectOptionsForPlan('riskTierFilterPlan', rms?.config?.tiers, 'All third parties', riskTierFilterForPlan);
+}
+
+function riskMatchesSelectorFiltersForPlan(risk) {
+    const query = riskFilterQueryForPlan.toLowerCase();
+    const title = (risk.titre || '').toLowerCase();
+    const description = (risk.description || '').toLowerCase();
+    const matchesQuery = !query || String(risk.id).toLowerCase().includes(query) || title.includes(query) || description.includes(query);
+    const countries = Array.isArray(risk?.paysExposes) ? risk.paysExposes : [];
+    const tiers = Array.isArray(risk?.tiers) ? risk.tiers : [];
+    const matchesEntity = !riskEntityFilterForPlan || countries.some(value => riskSelectorValueMatchesForPlan(value, riskEntityFilterForPlan, rms?.config?.countries));
+    const matchesTier = !riskTierFilterForPlan || tiers.some(value => riskSelectorValueMatchesForPlan(value, riskTierFilterForPlan, rms?.config?.tiers));
+    return matchesQuery && matchesEntity && matchesTier;
+}
+
+function getFilteredRisksForPlan() {
+    return Array.isArray(rms?.risks) ? rms.risks.filter(riskMatchesSelectorFiltersForPlan) : [];
+}
+
 function renderRiskSelectionListForPlan() {
     const riskList = document.getElementById('riskListForPlan');
     if (!riskList) return;
-    const query = riskFilterQueryForPlan.toLowerCase();
-    riskList.innerHTML = rms.risks.filter(risk => {
-        const title = (risk.titre || risk.description || '').toLowerCase();
-        return String(risk.id).includes(query) || title.includes(query);
-    }).map(risk => {
+    const filteredRisks = getFilteredRisksForPlan();
+    if (!filteredRisks.length) {
+        riskList.innerHTML = '<div class="risk-list-empty">No risk matches the current filters.</div>';
+        return;
+    }
+    riskList.innerHTML = filteredRisks.map(risk => {
         const isSelected = selectedRisksForPlan.some(id => idsEqual(id, risk.id));
         const title = escapeHtml(risk.titre || risk.description || 'Untitled');
         const process = escapeHtml(risk.processus || '');
         const subProcess = risk.sousProcessus ? ` > ${escapeHtml(risk.sousProcessus)}` : '';
         const type = escapeHtml(risk.typeCorruption || '');
+        const entityLabel = (Array.isArray(risk.paysExposes) ? risk.paysExposes : [])
+            .map(value => getRiskSelectorOptionLabelForPlan(value, rms?.config?.countries))
+            .filter(Boolean)
+            .join(', ');
+        const tierLabel = (Array.isArray(risk.tiers) ? risk.tiers : [])
+            .map(value => getRiskSelectorOptionLabelForPlan(value, rms?.config?.tiers))
+            .filter(Boolean)
+            .join(', ');
         const riskId = encodeInlineArgument(risk.id);
         const safeRiskId = sanitizeId(String(risk.id));
         return `
@@ -2018,6 +2088,7 @@ function renderRiskSelectionListForPlan() {
               <div class="risk-item-info">
                 <div class="risk-item-title">#${escapeHtml(risk.id)} - ${title}</div>
                 <div class="risk-item-meta">Process: ${process}${subProcess} | Type: ${type}</div>
+                <div class="risk-item-meta">Entities: ${escapeHtml(entityLabel || 'Not defined')} | Third parties: ${escapeHtml(tierLabel || 'Not defined')}</div>
               </div>
             </div>`;
     }).join('');
@@ -2026,6 +2097,37 @@ function renderRiskSelectionListForPlan() {
 window.filterRisksForPlan = function(query) {
     riskFilterQueryForPlan = query;
     renderRiskSelectionListForPlan();
+};
+
+window.filterRisksForPlanByEntity = function(value) {
+    riskEntityFilterForPlan = value;
+    renderRiskSelectionListForPlan();
+};
+
+window.filterRisksForPlanByTier = function(value) {
+    riskTierFilterForPlan = value;
+    renderRiskSelectionListForPlan();
+};
+
+window.selectAllFilteredRisksForPlan = function() {
+    getFilteredRisksForPlan().forEach(risk => {
+        if (!selectedRisksForPlan.some(id => idsEqual(id, risk.id))) {
+            selectedRisksForPlan.push(risk.id);
+        }
+    });
+    renderRiskSelectionListForPlan();
+    if (rms && typeof rms.markUnsavedChange === 'function') {
+        rms.markUnsavedChange('actionPlanForm');
+    }
+};
+
+window.deselectAllFilteredRisksForPlan = function() {
+    const filteredRisks = getFilteredRisksForPlan();
+    selectedRisksForPlan = selectedRisksForPlan.filter(id => !filteredRisks.some(risk => idsEqual(risk.id, id)));
+    renderRiskSelectionListForPlan();
+    if (rms && typeof rms.markUnsavedChange === 'function') {
+        rms.markUnsavedChange('actionPlanForm');
+    }
 };
 
 function closeRiskSelectorForPlan() {
