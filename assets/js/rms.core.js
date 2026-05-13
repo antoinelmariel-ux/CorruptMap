@@ -10514,7 +10514,7 @@ return window;`);
                     </div>
                     <div class="controls-table-cell controls-table-actions">
                         <button class="action-btn" onclick="editActionPlan(${plan.id})" title="Edit">✏️</button>
-                        <button class="action-btn" onclick="sendActionPlanReminderEmail(${plan.id})" title="Send reminder email">✉️</button>
+                        <button class="action-btn action-btn-email" onclick="sendActionPlanReminderEmail(${plan.id})" title="Send reminder email" aria-label="Send reminder email">✉</button>
                         <button class="action-btn" onclick="deleteActionPlan(${plan.id})" title="Delete">🗑️</button>
                     </div>
                 </div>
