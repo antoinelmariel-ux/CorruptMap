@@ -7993,8 +7993,6 @@ return window;`);
                 });
             }
 
-            const cellCounts = {};
-
             filteredRisks.forEach(risk => {
                 const riskStatus = this.normalizeStatusValue('risk', risk?.statut, risk?.status, risk?.statusLabel, risk?.state);
                 if (riskStatus === 'not-included') {
@@ -8055,13 +8053,6 @@ return window;`);
                     const bottomPercent = ((netRows - snappedRowFromTop - 0.5) / netRows) * 100;
 
                     const key = `${snappedColIndex}-${snappedRowFromTop}`;
-                    const index = cellCounts[key] || 0;
-                    cellCounts[key] = index + 1;
-                    const slots = cellCounts[key];
-                    const gridSize = Math.ceil(Math.sqrt(slots));
-                    const slotIndex = index;
-                    const row = Math.floor(slotIndex / gridSize);
-                    const col = slotIndex % gridSize;
 
                     const point = document.createElement('div');
                     point.className = `risk-point ${viewKey}`;
@@ -8112,15 +8103,14 @@ return window;`);
                     point.onclick = () => this.selectRisk(risk.id, { preferredView: viewKey });
                     grid.appendChild(point);
 
-                    const diameter = point.offsetWidth;
-                    const margin = 4;
-                    const step = diameter + margin;
-                    const dx = (col - (gridSize - 1) / 2) * step;
-                    const dy = (row - (gridSize - 1) / 2) * step;
-
-                    point.style.left = `calc(${leftPercent}% + ${dx}px)`;
-                    point.style.bottom = `calc(${bottomPercent}% + ${dy}px)`;
-                    point.style.transform = 'translate(-50%, 50%)';
+                    if (!pointsByDisplayCell.has(key)) {
+                        pointsByDisplayCell.set(key, []);
+                    }
+                    pointsByDisplayCell.get(key).push({
+                        point,
+                        centerLeft: leftPercent,
+                        centerBottom: bottomPercent
+                    });
 
                     return;
                 }
@@ -8146,18 +8136,8 @@ return window;`);
 
                 const clampedProb = Math.min(4, Math.max(1, effectiveProb || 1));
                 const clampedImpact = Math.min(4, Math.max(1, rawImpact || 1));
-
-                const leftPercent = ((clampedProb - 0.5) / 4) * 100;
-                const bottomPercent = ((clampedImpact - 0.5) / 4) * 100;
-
-                const key = `${clampedProb}-${clampedImpact}`;
-                const index = cellCounts[key] || 0;
-                cellCounts[key] = index + 1;
-                const slots = cellCounts[key];
-                const gridSize = Math.ceil(Math.sqrt(slots));
-                const slotIndex = index;
-                const row = Math.floor(slotIndex / gridSize);
-                const col = slotIndex % gridSize;
+                const displayProb = Math.round(clampedProb);
+                const displayImpact = Math.round(clampedImpact);
 
                 const point = document.createElement('div');
                 point.className = `risk-point ${viewKey}`;
@@ -8204,24 +8184,14 @@ return window;`);
                 }
                 grid.appendChild(point);
 
-                const diameter = point.offsetWidth;
-                const margin = 4;
-                const step = diameter + margin;
-                const dx = (col - (gridSize - 1) / 2) * step;
-                const dy = (row - (gridSize - 1) / 2) * step;
-
-                point.style.left = `calc(${leftPercent}% + ${dx}px)`;
-                point.style.bottom = `calc(${bottomPercent}% + ${dy}px)`;
-                point.style.transform = 'translate(-50%, 50%)';
-
-                const displayCellKey = `${clampedProb}-${clampedImpact}`;
+                const displayCellKey = `${displayProb}-${displayImpact}`;
                 if (!pointsByDisplayCell.has(displayCellKey)) {
                     pointsByDisplayCell.set(displayCellKey, []);
                 }
                 pointsByDisplayCell.get(displayCellKey).push({
                     point,
-                    centerLeft: leftPercent,
-                    centerBottom: bottomPercent
+                    centerLeft: ((displayProb - 0.5) / 4) * 100,
+                    centerBottom: ((displayImpact - 0.5) / 4) * 100
                 });
             });
 
