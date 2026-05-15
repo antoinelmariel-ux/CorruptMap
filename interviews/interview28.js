@@ -1,2 +1,0 @@
-window.RMS_INTERVIEW_FILES = window.RMS_INTERVIEW_FILES || {};
-window.RMS_INTERVIEW_FILES['interview28'] = {"id":28,"fileIndex":28,"fileName":"interview28.js","title":"Entretien Jean-Yves LAMIRAULT","referents":["Jean-Yves LAMIRAULT"],"date":"2026-01-09","notes":"","scopes":[],"processes":[],"subProcesses":[],"createdAt":"2026-01-09T16:20:44Z","updatedAt":"2026-01-09T16:20:44Z","mindMap":{"version":1,"data":null}};

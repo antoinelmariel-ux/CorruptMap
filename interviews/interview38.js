@@ -1,2 +1,0 @@
-window.RMS_INTERVIEW_FILES = window.RMS_INTERVIEW_FILES || {};
-window.RMS_INTERVIEW_FILES['interview38'] = {"id":38,"fileIndex":38,"fileName":"interview38.js","title":"Entretien Karen PINACHYAN","referents":["Karen PINACHYAN"],"date":"2026-01-09","notes":"","scopes":[],"processes":[],"subProcesses":[],"createdAt":"2026-01-09T16:20:44Z","updatedAt":"2026-01-09T16:20:44Z","mindMap":{"version":1,"data":null}};

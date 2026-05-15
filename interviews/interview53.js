@@ -1,2 +1,0 @@
-window.RMS_INTERVIEW_FILES = window.RMS_INTERVIEW_FILES || {};
-window.RMS_INTERVIEW_FILES['interview53'] = {"id":53,"fileIndex":53,"fileName":"interview53.js","title":"Entretien Nicolas LENFANT","referents":["Nicolas LENFANT"],"date":"2026-01-09","notes":"","scopes":[],"processes":[],"subProcesses":[],"createdAt":"2026-01-09T16:20:44Z","updatedAt":"2026-01-09T16:20:44Z","mindMap":{"version":1,"data":null}};

@@ -1,2 +1,0 @@
-window.RMS_INTERVIEW_FILES = window.RMS_INTERVIEW_FILES || {};
-window.RMS_INTERVIEW_FILES['interview17'] = {"id":17,"fileIndex":17,"fileName":"interview17.js","title":"Entretien Elly DUVAL","referents":["Elly DUVAL"],"date":"2026-01-09","notes":"","scopes":[],"processes":[],"subProcesses":[],"createdAt":"2026-01-09T16:20:44Z","updatedAt":"2026-01-09T16:20:44Z","mindMap":{"version":1,"data":null}};
