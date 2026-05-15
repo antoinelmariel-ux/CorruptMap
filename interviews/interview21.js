@@ -1,2 +1,0 @@
-window.RMS_INTERVIEW_FILES = window.RMS_INTERVIEW_FILES || {};
-window.RMS_INTERVIEW_FILES['interview21'] = {"id":21,"fileIndex":21,"fileName":"interview21.js","title":"Entretien Estella OZINO TELMON","referents":["Estella OZINO TELMON"],"date":"2026-01-09","notes":"","scopes":[],"processes":[],"subProcesses":[],"createdAt":"2026-01-09T16:20:44Z","updatedAt":"2026-01-09T16:20:44Z","mindMap":{"version":1,"data":null}};
