@@ -1803,15 +1803,6 @@ function addNewActionPlan() {
     if (form) {
         form.reset();
         selectedRisksForPlan = [];
-        if (lastActionPlanData) {
-            document.getElementById('planTitle').value = lastActionPlanData.title || '';
-            document.getElementById('planOwner').value = lastActionPlanData.owner || '';
-            document.getElementById('planDueDate').value = lastActionPlanData.dueDate || '';
-            document.getElementById('planStatus').value = lastActionPlanData.status || '';
-            document.getElementById('planDescription').value = lastActionPlanData.description || '';
-            document.getElementById('planComment').value = lastActionPlanData.comment || '';
-            selectedRisksForPlan = [...(lastActionPlanData.risks || [])];
-        }
         const contextRiskId = (actionPlanCreationContext && actionPlanCreationContext.riskId != null)
             ? actionPlanCreationContext.riskId
             : null;
