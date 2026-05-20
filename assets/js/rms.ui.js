@@ -677,7 +677,7 @@ function renderBenefitFirstAssignment() {
                     : 'No linked control';
                 const linkedHtml = linkedControls.length
                     ? `<div class="benefit-first-linked-controls">
-                        ${linkedControls.map(item => `<span class="benefit-first-linked-chip">#${item.id} - ${item.name}</span>`).join('')}
+                        ${linkedControls.map(item => `<span class="benefit-first-linked-chip">#${item.id} - ${item.name} <button type="button" class="transverse-control-remove-btn" onclick="removeControlFromBenefit(${JSON.stringify(item.id)}, '${encodeURIComponent(label)}')" aria-label="Remove control #${item.id} from benefit ${label}">×</button></span>`).join('')}
                     </div>`
                     : '';
                 return `
@@ -697,6 +697,25 @@ function renderBenefitFirstAssignment() {
     `;
 }
 window.renderBenefitFirstAssignment = renderBenefitFirstAssignment;
+
+
+function removeControlFromBenefit(controlId, encodedLabel) {
+    const label = decodeURIComponent(encodedLabel || '');
+    const key = String(controlId);
+    const assignment = controlAssignmentsForRisk[key];
+    if (!assignment) return;
+    const benefits = Array.isArray(assignment.avantagesIndus) ? assignment.avantagesIndus : [];
+    assignment.avantagesIndus = benefits.filter(item => item !== label);
+    if (!assignment.transverse && assignment.avantagesIndus.length === 0) {
+        selectedControlsForRisk = selectedControlsForRisk.filter(id => !idsEqual(id, controlId));
+        delete controlAssignmentsForRisk[key];
+    }
+    updateSelectedControlsDisplay();
+    if (rms && typeof rms.markUnsavedChange === 'function') {
+        rms.markUnsavedChange('riskForm');
+    }
+}
+window.removeControlFromBenefit = removeControlFromBenefit;
 
 function openControlSelectorForBenefit(encodedLabel) {
     const label = decodeURIComponent(encodedLabel);

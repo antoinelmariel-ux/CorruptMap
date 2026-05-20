@@ -3276,7 +3276,6 @@ function applyPatch() {
       let riskFilterQueryForControl = '';
       let riskEntityFilterForControl = '';
       let riskTierFilterForControl = '';
-      let lastControlData = null;
       function formatGenericControlReference(index) {
         const safeIndex = Number.isFinite(Number(index)) ? Math.max(1, Number(index)) : 1;
         return `GEN.${String(Math.trunc(safeIndex)).padStart(2, '0')}`;
@@ -3345,18 +3344,6 @@ function applyPatch() {
 
         selectedRisksForControl = [];
 
-        if (lastControlData) {
-          setControlFieldValue('controlName', lastControlData.name);
-          setControlFieldValue('controlReference', lastControlData.reference);
-          setControlFieldValue('controlGroupCode', lastControlData.groupCode);
-          setControlFieldValue('controlType', lastControlData.type);
-          setControlFieldValue('controlOwner', lastControlData.owner);
-          setControlFieldValue('controlMode', lastControlData.mode);
-          setControlFieldValue('controlEffectiveness', lastControlData.effectiveness);
-          setControlFieldValue('controlDescription', lastControlData.description);
-          selectedRisksForControl = [...(lastControlData.risks || [])];
-        }
-
         const contextRiskId = (window.controlCreationContext && window.controlCreationContext.riskId != null)
           ? window.controlCreationContext.riskId
           : null;
@@ -3364,7 +3351,7 @@ function applyPatch() {
           selectedRisksForControl.push(contextRiskId);
         }
 
-        document.getElementById('controlModalTitle').textContent = 'Nouveau Contrôle';
+        document.getElementById('controlModalTitle').textContent = 'New Control';
         updateSelectedRisksDisplay();
         populateControlOwnerSuggestions();
         const modal = document.getElementById('controlModal');
@@ -3768,8 +3755,6 @@ function applyPatch() {
         if (context && RMS && typeof RMS.markUnsavedChange === 'function') {
           RMS.markUnsavedChange('riskForm');
         }
-
-        lastControlData = { ...controlData, risks: [...controlData.risks] };
 
         state.save("contrôle");
         state.renderAll();
