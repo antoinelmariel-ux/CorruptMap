@@ -3632,7 +3632,7 @@ function applyPatch() {
           return `
             <div class="selected-risk-item">
               #${risk.id} - ${title.substring(0, 50)}${title.length > 50 ? '...' : ''}
-              <span class="remove-risk" onclick="removeRiskFromSelection(${JSON.stringify(riskId)})">×</span>
+              <span class="remove-risk" onclick="removeRiskFromSelection(decodeURIComponent('${encodeURIComponent(String(riskId))}'))">×</span>
             </div>
           `;
         }).join('');
