@@ -11986,12 +11986,14 @@ return window;`);
         if (this.interviewEditorState.editingId != null && Array.isArray(this.interviews)) {
             existingInterview = this.interviews.find(entry => idsEqual(entry.id, this.interviewEditorState.editingId)) || null;
         }
+        const currentInterviewCount = Array.isArray(this.interviews) ? this.interviews.length : 0;
+        const nextInterviewIndexFromCount = currentInterviewCount + 1;
         const fileIndex = existingInterview
             ? this.getInterviewFileIndex(existingInterview)
-            : this.getNextInterviewFileIndex();
+            : nextInterviewIndexFromCount;
         const baseFileName = existingInterview?.fileName
             ? existingInterview.fileName
-            : this.getInterviewFileName({ fileIndex }, 'json');
+            : this.getInterviewFileName({ fileIndex }, 'js');
 
         const processesMap = new Map();
         selectedScopes.forEach(scope => {
@@ -12056,9 +12058,6 @@ return window;`);
         this.interviewEditorState = null;
         this.saveData();
         this.saveInterviewFile(normalizedInterview);
-        if (this.getInterviewFileFormat(normalizedInterview, 'json') !== 'json') {
-            this.downloadInterviewJson(normalizedInterview);
-        }
         this.clearUnsavedChanges('interviewForm');
         this.updateInterviewsList();
         this.closeInterviewModal();
