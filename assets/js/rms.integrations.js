@@ -3347,7 +3347,12 @@ function applyPatch() {
         const contextRiskId = (window.controlCreationContext && window.controlCreationContext.riskId != null)
           ? window.controlCreationContext.riskId
           : null;
-        if (contextRiskId != null && !selectedRisksForControl.some(id => idsEqual(id, contextRiskId))) {
+        const contextRisk = contextRiskId != null && Array.isArray(state?.risks)
+          ? state.risks.find(risk => idsEqual(risk.id, contextRiskId))
+          : null;
+        const canAttachContextRisk = contextRiskId != null
+          && !(typeof isRiskNotIncluded === 'function' && isRiskNotIncluded(contextRisk));
+        if (canAttachContextRisk && !selectedRisksForControl.some(id => idsEqual(id, contextRiskId))) {
           selectedRisksForControl.push(contextRiskId);
         }
 
@@ -3498,6 +3503,10 @@ function applyPatch() {
       }
 
       function riskMatchesSelectorFiltersForControl(risk) {
+        if (typeof isRiskNotIncluded === 'function' && isRiskNotIncluded(risk)) {
+          return false;
+        }
+
         const query = riskFilterQueryForControl.toLowerCase();
         const title = (risk.titre || '').toLowerCase();
         const description = (risk.description || '').toLowerCase();
@@ -3604,6 +3613,10 @@ function applyPatch() {
         if (index > -1) {
           selectedRisksForControl.splice(index, 1);
         } else {
+          const risk = Array.isArray(state?.risks) ? state.risks.find(item => idsEqual(item.id, targetId)) : null;
+          if (typeof isRiskNotIncluded === 'function' && isRiskNotIncluded(risk)) {
+            return;
+          }
           selectedRisksForControl.push(riskId);
         }
         if (RMS && typeof RMS.markUnsavedChange === 'function') {
@@ -3709,7 +3722,13 @@ function applyPatch() {
           }
         }
 
-        if (context && resultingControlId != null) {
+        const contextRisk = context?.riskId != null && Array.isArray(state?.risks)
+          ? state.risks.find(risk => idsEqual(risk.id, context.riskId))
+          : null;
+        const canAttachContextRisk = context
+          && !(typeof isRiskNotIncluded === 'function' && isRiskNotIncluded(contextRisk));
+
+        if (canAttachContextRisk && resultingControlId != null) {
           if (!selectedControlsForRisk.some(id => idsEqual(id, resultingControlId))) {
             selectedControlsForRisk.push(resultingControlId);
           }
@@ -3752,7 +3771,7 @@ function applyPatch() {
           window.controlCreationContext = null;
         }
 
-        if (context && RMS && typeof RMS.markUnsavedChange === 'function') {
+        if (canAttachContextRisk && RMS && typeof RMS.markUnsavedChange === 'function') {
           RMS.markUnsavedChange('riskForm');
         }
 
