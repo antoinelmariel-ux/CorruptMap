@@ -8239,7 +8239,7 @@ return window;`);
         } = this.filters || {};
 
         const processFilter = String(process || '').toLowerCase();
-        const searchFilter = String(search || '').toLowerCase();
+        const searchFilter = String(search || '').trim().toLowerCase();
         const entityFilters = Array.isArray(entity)
             ? entity.map(value => String(value || '').toLowerCase()).filter(Boolean)
             : [];
@@ -10722,10 +10722,7 @@ return window;`);
             return;
         }
 
-        let normalizedValue = value == null ? '' : String(value);
-        if (normalizedKey === 'search') {
-            normalizedValue = normalizedValue.trim();
-        }
+        const normalizedValue = value == null ? '' : String(value);
         this.interviewFilters[normalizedKey] = normalizedValue;
 
         if (normalizedKey === 'process') {

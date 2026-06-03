@@ -172,7 +172,7 @@ function searchRisks(searchTermOrEvent, sourceElement) {
         searchTerm = originElement?.value;
     }
 
-    const normalizedValue = searchTerm == null ? '' : String(searchTerm).trim();
+    const normalizedValue = searchTerm == null ? '' : String(searchTerm);
 
     if (!rms.filters) {
         rms.filters = { process: '', type: '', status: '', search: '', entity: [], tiers: [] };
