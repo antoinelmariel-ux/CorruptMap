@@ -147,6 +147,26 @@ function idsEqual(a, b) {
     return String(a) === String(b);
 }
 
+function normalizeRiskStatusValue(value) {
+    return String(value ?? '')
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[_\s]+/g, '-')
+        .replace(/[^a-z0-9-]/g, '')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+}
+
+function isRiskNotIncluded(risk) {
+    const normalizedStatus = normalizeRiskStatusValue(risk?.statut);
+    return normalizedStatus === 'not-included'
+        || normalizedStatus === 'non-included'
+        || normalizedStatus === 'na'
+        || normalizedStatus === 'n-a';
+}
+
 function getNextSequentialId(items, startAt = 1) {
     if (!Array.isArray(items) || items.length === 0) {
         return startAt;
@@ -167,6 +187,8 @@ function getNextSequentialId(items, startAt = 1) {
 
 window.sanitizeId = sanitizeId;
 window.idsEqual = idsEqual;
+window.normalizeRiskStatusValue = normalizeRiskStatusValue;
+window.isRiskNotIncluded = isRiskNotIncluded;
 window.getNextSequentialId = getNextSequentialId;
 window.slugifyLabel = slugifyLabel;
 window.sanitizeRichText = sanitizeRichText;

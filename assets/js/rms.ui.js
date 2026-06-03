@@ -1825,7 +1825,12 @@ function addNewActionPlan() {
         const contextRiskId = (actionPlanCreationContext && actionPlanCreationContext.riskId != null)
             ? actionPlanCreationContext.riskId
             : null;
-        if (contextRiskId != null && !selectedRisksForPlan.some(id => idsEqual(id, contextRiskId))) {
+        const contextRisk = contextRiskId != null && Array.isArray(rms?.risks)
+            ? rms.risks.find(risk => idsEqual(risk.id, contextRiskId))
+            : null;
+        const canAttachContextRisk = contextRiskId != null
+            && !(typeof isRiskNotIncluded === 'function' && isRiskNotIncluded(contextRisk));
+        if (canAttachContextRisk && !selectedRisksForPlan.some(id => idsEqual(id, contextRiskId))) {
             selectedRisksForPlan.push(contextRiskId);
         }
         updateSelectedRisksForPlanDisplay();
@@ -2031,7 +2036,13 @@ function saveActionPlan() {
         }
     }
 
-    if (context && resultingPlanId != null) {
+    const contextRisk = context?.riskId != null && Array.isArray(rms?.risks)
+        ? rms.risks.find(risk => idsEqual(risk.id, context.riskId))
+        : null;
+    const canAttachContextRisk = context
+        && !(typeof isRiskNotIncluded === 'function' && isRiskNotIncluded(contextRisk));
+
+    if (canAttachContextRisk && resultingPlanId != null) {
         if (!selectedActionPlansForRisk.some(id => idsEqual(id, resultingPlanId))) {
             selectedActionPlansForRisk.push(resultingPlanId);
         }
@@ -2059,7 +2070,7 @@ function saveActionPlan() {
         actionPlanCreationContext = null;
     }
 
-    if (context && typeof rms?.markUnsavedChange === 'function') {
+    if (canAttachContextRisk && typeof rms?.markUnsavedChange === 'function') {
         rms.markUnsavedChange('riskForm');
     }
 
@@ -2130,6 +2141,10 @@ function populateRiskSelectorFiltersForPlan() {
 }
 
 function riskMatchesSelectorFiltersForPlan(risk) {
+    if (typeof isRiskNotIncluded === 'function' && isRiskNotIncluded(risk)) {
+        return false;
+    }
+
     const query = riskFilterQueryForPlan.toLowerCase();
     const title = (risk.titre || '').toLowerCase();
     const description = (risk.description || '').toLowerCase();
@@ -2228,6 +2243,10 @@ function toggleRiskSelectionForPlan(riskId) {
     if (index > -1) {
         selectedRisksForPlan.splice(index, 1);
     } else {
+        const risk = Array.isArray(rms?.risks) ? rms.risks.find(item => idsEqual(item.id, targetId)) : null;
+        if (typeof isRiskNotIncluded === 'function' && isRiskNotIncluded(risk)) {
+            return;
+        }
         selectedRisksForPlan.push(riskId);
     }
     if (rms && typeof rms.markUnsavedChange === 'function') {
